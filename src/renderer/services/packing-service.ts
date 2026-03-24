@@ -1,10 +1,9 @@
 import type { ICreatePacking, IReadPacking } from '../../shared/packings';
-import { getPackingHttpClient } from './http/domain-clients';
+import { getAppApi } from './electron-api';
 
 export const PackingService = {
   async getAllPackings(): Promise<IReadPacking[]> {
-    const response = await getPackingHttpClient().get<IReadPacking[]>('/');
-    return response.data;
+    return getAppApi().packings.list();
   },
 
   async getAllPackingsDto(): Promise<IReadPacking[]> {
@@ -12,16 +11,14 @@ export const PackingService = {
   },
 
   async createPacking(payload: ICreatePacking): Promise<IReadPacking> {
-    const response = await getPackingHttpClient().post<IReadPacking>('/', payload);
-    return response.data;
+    return getAppApi().packings.create(payload);
   },
 
   async updatePacking(id: string, payload: ICreatePacking): Promise<IReadPacking> {
-    const response = await getPackingHttpClient().put<IReadPacking>(`/${id}`, payload);
-    return response.data;
+    return getAppApi().packings.update(id, payload);
   },
 
   async deletePacking(id: string): Promise<void> {
-    await getPackingHttpClient().delete(`/${id}`);
+    await getAppApi().packings.delete(id);
   },
 };

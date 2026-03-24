@@ -1,44 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { UnitOfMeasure } from '../../src/shared/unit-of-measure';
-
-const recipeHttpClientMocks = vi.hoisted(() => ({
-  deleteMock: vi.fn(),
-  getMock: vi.fn(),
-  postMock: vi.fn(),
-  putMock: vi.fn(),
-}));
-
-const productServiceMocks = vi.hoisted(() => ({
-  getAllProductsMock: vi.fn(),
-}));
-
-const packingServiceMocks = vi.hoisted(() => ({
-  getAllPackingsMock: vi.fn(),
-}));
-
-vi.mock('../../src/renderer/services/http/domain-clients', () => ({
-  getRecipeHttpClient: () => ({
-    delete: recipeHttpClientMocks.deleteMock,
-    get: recipeHttpClientMocks.getMock,
-    post: recipeHttpClientMocks.postMock,
-    put: recipeHttpClientMocks.putMock,
-  }),
-}));
-
-vi.mock('../../src/renderer/services/product-service', () => ({
-  ProductService: {
-    getAllProducts: productServiceMocks.getAllProductsMock,
+const appApiMocks = vi.hoisted(() => ({
+  recipes: {
+    create: vi.fn(),
+    delete: vi.fn(),
+    getById: vi.fn(),
+    list: vi.fn(),
+    update: vi.fn(),
   },
 }));
 
-vi.mock('../../src/renderer/services/packing-service', () => ({
-  PackingService: {
-    getAllPackings: packingServiceMocks.getAllPackingsMock,
-  },
+vi.mock('../../src/renderer/services/electron-api', () => ({
+  getAppApi: () => appApiMocks,
 }));
 
-const apiRecipe = {
+const recipe = {
   id: 'recipe-1',
   name: 'Brigadeiro Tradicional',
   description: 'Receita de brigadeiro',
@@ -49,18 +25,22 @@ const apiRecipe = {
   totalCost: 24,
   ingredients: [
     {
-      productId: 'product-1',
-      productName: 'Chocolate em po',
+      ingredientId: 'product-1',
       quantity: 0.5,
-      ingredientPrice: 18.9,
+      name: 'Chocolate em po',
+      unitOfMeasure: 2,
+      unitPrice: 18.9,
+      totalCost: 9.45,
     },
   ],
   packings: [
     {
       packingId: 'packing-1',
-      packingName: 'Caixa kraft',
       quantity: 2,
-      packingUnitPrice: 0.4,
+      name: 'Caixa kraft',
+      unitOfMeasure: 6,
+      unitPrice: 0.4,
+      totalCost: 0.8,
     },
   ],
 };
@@ -68,65 +48,24 @@ const apiRecipe = {
 describe('RecipeService', () => {
   beforeEach(() => {
     vi.resetModules();
-    recipeHttpClientMocks.deleteMock.mockReset();
-    recipeHttpClientMocks.getMock.mockReset();
-    recipeHttpClientMocks.postMock.mockReset();
-    recipeHttpClientMocks.putMock.mockReset();
-    productServiceMocks.getAllProductsMock.mockReset();
-    packingServiceMocks.getAllPackingsMock.mockReset();
-    productServiceMocks.getAllProductsMock.mockResolvedValue([
-      {
-        id: 'product-1',
-        name: 'Chocolate em po',
-        price: 18.9,
-        quantity: 1,
-        unitOfMeasure: UnitOfMeasure.kg,
-        unitPrice: 18.9,
-      },
-    ]);
-    packingServiceMocks.getAllPackingsMock.mockResolvedValue([
-      {
-        id: 'packing-1',
-        name: 'Caixa kraft',
-        description: 'Caixa para 4 brigadeiros',
-        price: 20,
-        quantity: 50,
-        unitOfMeasure: UnitOfMeasure.box,
-        packingUnitPrice: 0.4,
-      },
-    ]);
+    appApiMocks.recipes.create.mockReset();
+    appApiMocks.recipes.delete.mockReset();
+    appApiMocks.recipes.getById.mockReset();
+    appApiMocks.recipes.list.mockReset();
+    appApiMocks.recipes.update.mockReset();
   });
 
-  it('hydrates recipe responses from API DTOs into the renderer read model', async () => {
-    recipeHttpClientMocks.getMock.mockResolvedValue({ data: [apiRecipe] });
+  it('loads recipes through the preload bridge', async () => {
+    appApiMocks.recipes.list.mockResolvedValue([recipe]);
     const { RecipeService } = await import('../../src/renderer/services/recipe-service');
 
-    const recipes = await RecipeService.getAllRecipes();
-
-    expect(recipes).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          id: 'recipe-1',
-          name: 'Brigadeiro Tradicional',
-          groupName: 'Brigadeiros',
-          totalCost: 24,
-        }),
-      ]),
-    );
-    expect(recipes[0]?.ingredients).toEqual([
-      expect.objectContaining({
-        ingredientId: 'product-1',
-        name: 'Chocolate em po',
-        unitOfMeasure: UnitOfMeasure.kg,
-        unitPrice: 18.9,
-        totalCost: 9.45,
-      }),
-    ]);
+    await expect(RecipeService.getAllRecipes()).resolves.toEqual([recipe]);
+    expect(appApiMocks.recipes.list).toHaveBeenCalledWith();
   });
 
-  it('creates and updates recipes by transforming renderer input into API DTOs', async () => {
-    recipeHttpClientMocks.postMock.mockResolvedValue({ data: apiRecipe });
-    recipeHttpClientMocks.putMock.mockResolvedValue({ data: apiRecipe });
+  it('creates and updates recipes through the preload bridge', async () => {
+    appApiMocks.recipes.create.mockResolvedValue(recipe);
+    appApiMocks.recipes.update.mockResolvedValue(recipe);
     const { RecipeService } = await import('../../src/renderer/services/recipe-service');
 
     const payload = {
@@ -149,78 +88,19 @@ describe('RecipeService', () => {
       ],
     };
 
-    await expect(RecipeService.createRecipe(payload)).resolves.toEqual(
-      expect.objectContaining({
-        id: 'recipe-1',
-        groupName: 'Brigadeiros',
-      }),
-    );
+    await expect(RecipeService.createRecipe(payload)).resolves.toEqual(recipe);
+    await expect(RecipeService.updateRecipe('recipe-1', payload)).resolves.toEqual(recipe);
 
-    await expect(RecipeService.updateRecipe('recipe-1', payload)).resolves.toEqual(
-      expect.objectContaining({
-        id: 'recipe-1',
-        groupName: 'Brigadeiros',
-      }),
-    );
-
-    expect(recipeHttpClientMocks.postMock).toHaveBeenCalledWith('/', {
-      name: 'Cookie recheado',
-      description: 'Receita para teste',
-      quantity: 12,
-      sellingValue: 7.5,
-      groupId: 'group-1',
-      ingredients: [
-        {
-          productId: 'product-1',
-          productName: 'Chocolate em po',
-          quantity: 0.5,
-          ingredientPrice: 18.9,
-        },
-      ],
-      packings: [
-        {
-          packingId: 'packing-1',
-          packingName: 'Caixa kraft',
-          quantity: 2,
-          packingUnitPrice: 0.4,
-        },
-      ],
-    });
-    expect(recipeHttpClientMocks.putMock).toHaveBeenCalledWith('/recipe-1', {
-      name: 'Cookie recheado',
-      description: 'Receita para teste',
-      quantity: 12,
-      sellingValue: 7.5,
-      groupId: 'group-1',
-      ingredients: [
-        {
-          productId: 'product-1',
-          productName: 'Chocolate em po',
-          quantity: 0.5,
-          ingredientPrice: 18.9,
-        },
-      ],
-      packings: [
-        {
-          packingId: 'packing-1',
-          packingName: 'Caixa kraft',
-          quantity: 2,
-          packingUnitPrice: 0.4,
-        },
-      ],
-    });
+    expect(appApiMocks.recipes.create).toHaveBeenCalledWith(payload);
+    expect(appApiMocks.recipes.update).toHaveBeenCalledWith('recipe-1', payload);
   });
 
-  it('returns recipe details by id, maps 404 to undefined and deletes recipes', async () => {
-    recipeHttpClientMocks.getMock
-      .mockResolvedValueOnce({ data: apiRecipe })
-      .mockRejectedValueOnce({ status: 404, message: 'Not found' });
-    recipeHttpClientMocks.deleteMock.mockResolvedValue(undefined);
+  it('loads recipe details by id and deletes recipes', async () => {
+    appApiMocks.recipes.getById.mockResolvedValueOnce(recipe).mockResolvedValueOnce(undefined);
+    appApiMocks.recipes.delete.mockResolvedValue(undefined);
     const { RecipeService } = await import('../../src/renderer/services/recipe-service');
 
-    const recipe = await RecipeService.getRecipeById('recipe-1');
-
-    expect(recipe).toEqual(
+    await expect(RecipeService.getRecipeById('recipe-1')).resolves.toEqual(
       expect.objectContaining({
         id: 'recipe-1',
         groupId: 'group-1',
@@ -229,6 +109,9 @@ describe('RecipeService', () => {
 
     await expect(RecipeService.getRecipeById('recipe-404')).resolves.toBeUndefined();
     await RecipeService.deleteRecipe('recipe-1');
-    expect(recipeHttpClientMocks.deleteMock).toHaveBeenCalledWith('/recipe-1');
+
+    expect(appApiMocks.recipes.getById).toHaveBeenNthCalledWith(1, 'recipe-1');
+    expect(appApiMocks.recipes.getById).toHaveBeenNthCalledWith(2, 'recipe-404');
+    expect(appApiMocks.recipes.delete).toHaveBeenCalledWith('recipe-1');
   });
 });

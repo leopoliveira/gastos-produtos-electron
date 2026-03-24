@@ -1,10 +1,9 @@
 import type { ICreateProduct, IReadProduct } from '../../shared/products';
-import { getProductHttpClient } from './http/domain-clients';
+import { getAppApi } from './electron-api';
 
 export const ProductService = {
   async getAllProducts(): Promise<IReadProduct[]> {
-    const response = await getProductHttpClient().get<IReadProduct[]>('/');
-    return response.data;
+    return getAppApi().products.list();
   },
 
   async getAllIngredientsDto(): Promise<IReadProduct[]> {
@@ -12,16 +11,14 @@ export const ProductService = {
   },
 
   async createProduct(payload: ICreateProduct): Promise<IReadProduct> {
-    const response = await getProductHttpClient().post<IReadProduct>('/', payload);
-    return response.data;
+    return getAppApi().products.create(payload);
   },
 
   async updateProduct(id: string, payload: ICreateProduct): Promise<IReadProduct> {
-    const response = await getProductHttpClient().put<IReadProduct>(`/${id}`, payload);
-    return response.data;
+    return getAppApi().products.update(id, payload);
   },
 
   async deleteProduct(id: string): Promise<void> {
-    await getProductHttpClient().delete(`/${id}`);
+    await getAppApi().products.delete(id);
   },
 };

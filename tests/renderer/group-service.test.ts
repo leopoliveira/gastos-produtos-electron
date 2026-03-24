@@ -1,31 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const groupHttpClientMocks = vi.hoisted(() => ({
-  deleteMock: vi.fn(),
-  getMock: vi.fn(),
-  postMock: vi.fn(),
-  putMock: vi.fn(),
+const appApiMocks = vi.hoisted(() => ({
+  groups: {
+    create: vi.fn(),
+    delete: vi.fn(),
+    list: vi.fn(),
+    update: vi.fn(),
+  },
 }));
 
-vi.mock('../../src/renderer/services/http/domain-clients', () => ({
-  getGroupHttpClient: () => ({
-    delete: groupHttpClientMocks.deleteMock,
-    get: groupHttpClientMocks.getMock,
-    post: groupHttpClientMocks.postMock,
-    put: groupHttpClientMocks.putMock,
-  }),
+vi.mock('../../src/renderer/services/electron-api', () => ({
+  getAppApi: () => appApiMocks,
 }));
 
 describe('GroupService', () => {
   beforeEach(() => {
     vi.resetModules();
-    groupHttpClientMocks.deleteMock.mockReset();
-    groupHttpClientMocks.getMock.mockReset();
-    groupHttpClientMocks.postMock.mockReset();
-    groupHttpClientMocks.putMock.mockReset();
+    appApiMocks.groups.create.mockReset();
+    appApiMocks.groups.delete.mockReset();
+    appApiMocks.groups.list.mockReset();
+    appApiMocks.groups.update.mockReset();
   });
 
-  it('loads groups from the API client', async () => {
+  it('loads groups from the preload bridge', async () => {
     const groups = [
       {
         id: 'group-1',
@@ -38,30 +35,30 @@ describe('GroupService', () => {
         description: 'Massas, recheios e coberturas para bolos.',
       },
     ];
-    groupHttpClientMocks.getMock.mockResolvedValue({ data: groups });
+    appApiMocks.groups.list.mockResolvedValue(groups);
     const { GroupService } = await import('../../src/renderer/services/group-service');
 
     await expect(GroupService.getAllGroups()).resolves.toEqual(groups);
-    expect(groupHttpClientMocks.getMock).toHaveBeenCalledWith('/');
+    expect(appApiMocks.groups.list).toHaveBeenCalledWith();
   });
 
-  it('creates, updates and deletes groups through the API client', async () => {
+  it('creates, updates and deletes groups through the preload bridge', async () => {
     const payload = {
       name: 'Doces finos',
       description: 'Linha premium para eventos.',
     };
-    const response = { data: { id: 'group-3', ...payload } };
-    groupHttpClientMocks.postMock.mockResolvedValue(response);
-    groupHttpClientMocks.putMock.mockResolvedValue(response);
-    groupHttpClientMocks.deleteMock.mockResolvedValue(undefined);
+    const response = { id: 'group-3', ...payload };
+    appApiMocks.groups.create.mockResolvedValue(response);
+    appApiMocks.groups.update.mockResolvedValue(response);
+    appApiMocks.groups.delete.mockResolvedValue(undefined);
     const { GroupService } = await import('../../src/renderer/services/group-service');
 
-    await expect(GroupService.createGroup(payload)).resolves.toEqual(response.data);
-    await expect(GroupService.updateGroup('group-3', payload)).resolves.toEqual(response.data);
+    await expect(GroupService.createGroup(payload)).resolves.toEqual(response);
+    await expect(GroupService.updateGroup('group-3', payload)).resolves.toEqual(response);
     await expect(GroupService.deleteGroup('group-3')).resolves.toBeUndefined();
 
-    expect(groupHttpClientMocks.postMock).toHaveBeenCalledWith('/', payload);
-    expect(groupHttpClientMocks.putMock).toHaveBeenCalledWith('/group-3', payload);
-    expect(groupHttpClientMocks.deleteMock).toHaveBeenCalledWith('/group-3');
+    expect(appApiMocks.groups.create).toHaveBeenCalledWith(payload);
+    expect(appApiMocks.groups.update).toHaveBeenCalledWith('group-3', payload);
+    expect(appApiMocks.groups.delete).toHaveBeenCalledWith('group-3');
   });
 });

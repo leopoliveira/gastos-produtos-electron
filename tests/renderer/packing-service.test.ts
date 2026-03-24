@@ -1,28 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const packingHttpClientMocks = vi.hoisted(() => ({
-  deleteMock: vi.fn(),
-  getMock: vi.fn(),
-  postMock: vi.fn(),
-  putMock: vi.fn(),
+const appApiMocks = vi.hoisted(() => ({
+  packings: {
+    create: vi.fn(),
+    delete: vi.fn(),
+    list: vi.fn(),
+    update: vi.fn(),
+  },
 }));
 
-vi.mock('../../src/renderer/services/http/domain-clients', () => ({
-  getPackingHttpClient: () => ({
-    delete: packingHttpClientMocks.deleteMock,
-    get: packingHttpClientMocks.getMock,
-    post: packingHttpClientMocks.postMock,
-    put: packingHttpClientMocks.putMock,
-  }),
+vi.mock('../../src/renderer/services/electron-api', () => ({
+  getAppApi: () => appApiMocks,
 }));
 
 describe('PackingService', () => {
   beforeEach(() => {
     vi.resetModules();
-    packingHttpClientMocks.deleteMock.mockReset();
-    packingHttpClientMocks.getMock.mockReset();
-    packingHttpClientMocks.postMock.mockReset();
-    packingHttpClientMocks.putMock.mockReset();
+    appApiMocks.packings.create.mockReset();
+    appApiMocks.packings.delete.mockReset();
+    appApiMocks.packings.list.mockReset();
+    appApiMocks.packings.update.mockReset();
   });
 
   it('loads packings and reuses the same list for packing options', async () => {
@@ -37,15 +34,15 @@ describe('PackingService', () => {
         packingUnitPrice: 0.3,
       },
     ];
-    packingHttpClientMocks.getMock.mockResolvedValue({ data: packings });
+    appApiMocks.packings.list.mockResolvedValue(packings);
     const { PackingService } = await import('../../src/renderer/services/packing-service');
 
     await expect(PackingService.getAllPackings()).resolves.toEqual(packings);
     await expect(PackingService.getAllPackingsDto()).resolves.toEqual(packings);
-    expect(packingHttpClientMocks.getMock).toHaveBeenCalledWith('/');
+    expect(appApiMocks.packings.list).toHaveBeenCalledTimes(2);
   });
 
-  it('creates, updates and deletes packings through the API client', async () => {
+  it('creates, updates and deletes packings through the preload bridge', async () => {
     const payload = {
       name: 'Envelope para cookie',
       description: 'Envelope selado',
@@ -53,18 +50,18 @@ describe('PackingService', () => {
       quantity: 40,
       unitOfMeasure: 8,
     };
-    const response = { data: { id: 'packing-1', ...payload, packingUnitPrice: 0.3 } };
-    packingHttpClientMocks.postMock.mockResolvedValue(response);
-    packingHttpClientMocks.putMock.mockResolvedValue(response);
-    packingHttpClientMocks.deleteMock.mockResolvedValue(undefined);
+    const response = { id: 'packing-1', ...payload, packingUnitPrice: 0.3 };
+    appApiMocks.packings.create.mockResolvedValue(response);
+    appApiMocks.packings.update.mockResolvedValue(response);
+    appApiMocks.packings.delete.mockResolvedValue(undefined);
     const { PackingService } = await import('../../src/renderer/services/packing-service');
 
-    await expect(PackingService.createPacking(payload)).resolves.toEqual(response.data);
-    await expect(PackingService.updatePacking('packing-1', payload)).resolves.toEqual(response.data);
+    await expect(PackingService.createPacking(payload)).resolves.toEqual(response);
+    await expect(PackingService.updatePacking('packing-1', payload)).resolves.toEqual(response);
     await expect(PackingService.deletePacking('packing-1')).resolves.toBeUndefined();
 
-    expect(packingHttpClientMocks.postMock).toHaveBeenCalledWith('/', payload);
-    expect(packingHttpClientMocks.putMock).toHaveBeenCalledWith('/packing-1', payload);
-    expect(packingHttpClientMocks.deleteMock).toHaveBeenCalledWith('/packing-1');
+    expect(appApiMocks.packings.create).toHaveBeenCalledWith(payload);
+    expect(appApiMocks.packings.update).toHaveBeenCalledWith('packing-1', payload);
+    expect(appApiMocks.packings.delete).toHaveBeenCalledWith('packing-1');
   });
 });

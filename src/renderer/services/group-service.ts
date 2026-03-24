@@ -1,23 +1,20 @@
 import type { ICreateGroup, IReadGroup, IUpdateGroup } from '../../shared/groups';
-import { getGroupHttpClient } from './http/domain-clients';
+import { getAppApi } from './electron-api';
 
 export const GroupService = {
   async getAllGroups(): Promise<IReadGroup[]> {
-    const response = await getGroupHttpClient().get<IReadGroup[]>('/');
-    return response.data;
+    return getAppApi().groups.list();
   },
 
   async createGroup(payload: ICreateGroup): Promise<IReadGroup> {
-    const response = await getGroupHttpClient().post<IReadGroup>('/', payload);
-    return response.data;
+    return getAppApi().groups.create(payload);
   },
 
   async updateGroup(id: string, payload: IUpdateGroup): Promise<IReadGroup> {
-    const response = await getGroupHttpClient().put<IReadGroup>(`/${id}`, payload);
-    return response.data;
+    return getAppApi().groups.update(id, payload);
   },
 
   async deleteGroup(id: string): Promise<void> {
-    await getGroupHttpClient().delete(`/${id}`);
+    await getAppApi().groups.delete(id);
   },
 };

@@ -36,6 +36,10 @@ export const ProductService = {
     return productsStore.map(cloneProduct);
   },
 
+  async getAllIngredientsDto(): Promise<IReadProduct[]> {
+    return productsStore.map(cloneProduct);
+  },
+
   async createProduct(payload: ICreateProduct): Promise<IReadProduct> {
     const product = buildProduct(payload, `product-${Date.now()}`);
     productsStore = [...productsStore, product];

@@ -39,6 +39,10 @@ export const PackingService = {
     return packingsStore.map(clonePacking);
   },
 
+  async getAllPackingsDto(): Promise<IReadPacking[]> {
+    return packingsStore.map(clonePacking);
+  },
+
   async createPacking(payload: ICreatePacking): Promise<IReadPacking> {
     const packing = buildPacking(payload, `packing-${Date.now()}`);
     packingsStore = [...packingsStore, packing];

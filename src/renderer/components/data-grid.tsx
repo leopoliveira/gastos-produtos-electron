@@ -18,6 +18,7 @@ type DataGridProps<T> = {
   columns: DataGridColumn<T>[];
   filterLabel: string;
   filterPlaceholder: string;
+  toolbarContent?: React.ReactNode;
   getFilterValue?: (item: T) => string;
   getRowKey: (item: T) => string;
   emptyMessage: string;
@@ -43,6 +44,7 @@ export const DataGrid = <T,>({
   columns,
   filterLabel,
   filterPlaceholder,
+  toolbarContent,
   getFilterValue,
   getRowKey,
   emptyMessage,
@@ -99,6 +101,7 @@ export const DataGrid = <T,>({
             placeholder={filterPlaceholder}
           />
         </label>
+        {toolbarContent}
       </div>
 
       <div className="data-grid__table-wrapper">

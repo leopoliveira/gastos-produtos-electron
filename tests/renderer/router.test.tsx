@@ -88,4 +88,39 @@ describe('renderer shell', () => {
       { label: 'Receita' },
     ]);
   });
+
+  it('renders the recipes route inside the application shell', async () => {
+    renderRoute('/recipes');
+
+    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    const primaryNavigation = screen.getByRole('navigation', {
+      name: 'Navegacao principal',
+    });
+
+    expect(within(breadcrumb).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
+    expect(within(breadcrumb).getByRole('link', { name: 'Receitas' })).toHaveAttribute(
+      'href',
+      '/recipes',
+    );
+    expect(screen.getByRole('heading', { name: 'Receitas', level: 2 })).toBeInTheDocument();
+    expect(within(primaryNavigation).getByRole('link', { name: 'Receitas' })).toHaveClass(
+      'sidebar__link--active',
+    );
+    expect(screen.getByRole('button', { name: 'Adicionar' })).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: 'Filtrar por Nome' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Filtrar por Grupo' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Custo Total' })).toBeInTheDocument();
+    expect(await screen.findByRole('cell', { name: 'Brigadeiro Tradicional' })).toBeInTheDocument();
+  });
+
+  it('renders the recipe visualization route inside the application shell', async () => {
+    renderRoute('/recipes/visualize/recipe-1');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Brigadeiro Tradicional', level: 2 }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Voltar' })).toBeInTheDocument();
+    expect(screen.getByText('Grupo: Brigadeiros')).toBeInTheDocument();
+    expect(screen.getByText('Chocolate em po')).toBeInTheDocument();
+  });
 });

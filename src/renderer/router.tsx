@@ -11,6 +11,9 @@ import {
 
 import { ProductsPage } from './pages/products/products-page';
 import { PackingsPage } from './pages/packings/packings-page';
+import { RecipesPage } from './pages/recipes/recipes-page';
+import { RecipeFormPage } from './pages/recipes/recipe-form-page';
+import { RecipeVisualizationPage } from './pages/recipes/recipe-visualization-page';
 
 type AppRouteDefinition = {
   path: string;
@@ -44,23 +47,27 @@ export const appRoutes: AppRouteDefinition[] = [
   {
     path: '/recipes',
     label: 'Receitas',
-    description: 'Tela base para listagem e navegacao das receitas.',
+    description: 'Listagem de receitas com filtros, custos e acoes principais.',
     showInNavigation: true,
+    element: <RecipesPage />,
   },
   {
     path: '/recipes/new',
     label: 'Nova Receita',
     description: 'Entrada preparada para o formulario de criacao de receitas.',
+    element: <RecipeFormPage />,
   },
   {
     path: '/recipes/:id',
     label: 'Editar Receita',
     description: 'Entrada preparada para a edicao detalhada de uma receita.',
+    element: <RecipeFormPage />,
   },
   {
     path: '/recipes/visualize/:id',
     label: 'Visualizar Receita',
     description: 'Entrada preparada para a visualizacao detalhada da receita.',
+    element: <RecipeVisualizationPage />,
   },
   {
     path: '/configuration',

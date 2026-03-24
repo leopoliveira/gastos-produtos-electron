@@ -1,0 +1,56 @@
+import React from 'react';
+import { render, screen, within } from '@testing-library/react';
+import { RouterProvider, createMemoryRouter } from 'react-router-dom';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('sonner', () => ({
+  Toaster: () => <div data-testid="global-toaster" />,
+}));
+
+import { buildAppRoutes, getBreadcrumbs } from '../../src/renderer/router';
+
+const renderRoute = (initialEntry: string) => {
+  const router = createMemoryRouter(buildAppRoutes(), {
+    initialEntries: [initialEntry],
+  });
+
+  return render(<RouterProvider router={router} />);
+};
+
+describe('renderer shell', () => {
+  it('renders the global navigation shell on the home route', () => {
+    renderRoute('/');
+
+    expect(
+      screen.getByRole('heading', { name: 'Amo Doces', level: 1 }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Navegacao principal' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Home' })).toHaveClass('sidebar__link--active');
+    expect(screen.getByTestId('global-toaster')).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument();
+  });
+
+  it('renders breadcrumb and active navigation state on a functional route', () => {
+    renderRoute('/products');
+
+    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    const primaryNavigation = screen.getByRole('navigation', {
+      name: 'Navegacao principal',
+    });
+
+    expect(within(breadcrumb).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('heading', { name: 'Materia Prima', level: 2 })).toBeInTheDocument();
+    expect(
+      within(primaryNavigation).getByRole('link', { name: 'Materia Prima' }),
+    ).toHaveClass('sidebar__link--active');
+  });
+
+  it('builds breadcrumbs for dynamic recipe visualization routes', () => {
+    expect(getBreadcrumbs('/recipes/visualize/123')).toEqual([
+      { label: 'Home', to: '/' },
+      { label: 'Receitas', to: '/recipes' },
+      { label: 'Visualizar' },
+      { label: 'Receita' },
+    ]);
+  });
+});

@@ -1,5 +1,6 @@
 import type React from 'react';
 import { NavLink } from 'react-router-dom';
+import styles from './sidebar.module.css';
 
 type SidebarItem = {
   path: string;
@@ -11,17 +12,19 @@ type SidebarProps = {
 };
 
 export const Sidebar = ({ items }: SidebarProps): React.JSX.Element => (
-  <aside className="sidebar">
-    <div className="sidebar__brand">
-      <h1 className="sidebar__title">Amo Doces</h1>
+  <aside className={styles.sidebar}>
+    <div className={styles.brand}>
+      <h1 className={styles.title}>Amo Doces</h1>
     </div>
 
-    <nav className="sidebar__nav" aria-label="Navegacao principal">
+    <nav className={styles.nav} aria-label="Navegacao principal">
       {items.map((item) => (
         <NavLink
           key={item.path}
           to={item.path}
-          className={({ isActive }) => `sidebar__link${isActive ? ' sidebar__link--active' : ''}`}
+          className={({ isActive }) =>
+            [styles.link, isActive ? styles.linkActive : null].filter(Boolean).join(' ')
+          }
           end={item.path === '/'}
         >
           {item.label}

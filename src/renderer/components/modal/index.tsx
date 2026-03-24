@@ -1,5 +1,6 @@
 import type React from 'react';
 import { useId } from 'react';
+import styles from './modal.module.css';
 
 type ModalProps = {
   title: string;
@@ -33,7 +34,7 @@ export const Modal = ({ title, description, onClose, children }: ModalProps): Re
 
   return (
     <div
-      className="modal-backdrop"
+      className={styles.backdrop}
       onClick={onClose}
       role="presentation"
     >
@@ -41,17 +42,17 @@ export const Modal = ({ title, description, onClose, children }: ModalProps): Re
         aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}
         aria-modal="true"
-        className="modal"
+        className={styles.modal}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
       >
-        <header className="modal__header">
+        <header className={styles.header}>
           <div>
-            <h3 className="modal__title" id={titleId}>
+            <h3 className={styles.title} id={titleId}>
               {title}
             </h3>
             {description ? (
-              <p className="modal__description" id={descriptionId}>
+              <p className={styles.description} id={descriptionId}>
                 {description}
               </p>
             ) : null}
@@ -59,7 +60,7 @@ export const Modal = ({ title, description, onClose, children }: ModalProps): Re
 
           <button
             aria-label="Fechar modal"
-            className="modal__close-button"
+            className={styles.closeButton}
             onClick={onClose}
             type="button"
           >
@@ -82,12 +83,12 @@ export const ModalActions = ({
   isConfirmDisabled = false,
   onConfirm,
 }: ModalActionsProps): React.JSX.Element => (
-  <footer className="modal__footer">
-    <button className="modal__secondary-button" onClick={onCancel} type="button">
+  <footer className={styles.footer}>
+    <button className={`${styles.button} ${styles.buttonSecondary}`} onClick={onCancel} type="button">
       {cancelLabel}
     </button>
     <button
-      className={confirmVariant === 'danger' ? 'modal__danger-button' : 'modal__primary-button'}
+      className={`${styles.button} ${confirmVariant === 'danger' ? styles.buttonDanger : styles.buttonPrimary}`}
       disabled={isConfirmDisabled}
       onClick={confirmButtonType === 'button' ? onConfirm : undefined}
       type={confirmButtonType}
@@ -106,8 +107,8 @@ export const ConfirmModal = ({
   cancelLabel = 'Cancelar',
 }: ConfirmModalProps): React.JSX.Element => (
   <Modal title={title} onClose={onClose}>
-    <div className="modal__body">
-      <p className="modal__description">{description}</p>
+    <div className={styles.body}>
+      <p className={styles.description}>{description}</p>
     </div>
 
     <ModalActions

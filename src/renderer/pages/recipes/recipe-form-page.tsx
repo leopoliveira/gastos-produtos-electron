@@ -20,6 +20,8 @@ import { RecipeService } from '../../services/recipe-service';
 import { GroupFormModal } from './group-form-modal';
 import { IngredientFormModal } from './ingredient-form-modal';
 import { PackingSelectionModal } from './packing-selection-modal';
+import ui from '../../styles/shared-ui.module.css';
+import styles from './recipe-form-page.module.css';
 
 type RecipeFormState = {
   name: string;
@@ -302,17 +304,17 @@ export const RecipeFormPage = (): React.JSX.Element => {
 
   if (error) {
     return (
-      <section className="products-page">
+      <section className={ui.page}>
         <header className="page-header">
           <h2 className="page-header__title">{isEditing ? 'Editar Receita' : 'Nova Receita'}</h2>
         </header>
 
-        <section className="products-feedback products-feedback--error" role="alert">
-          <p className="products-feedback__title">Falha ao carregar formulário</p>
-          <p className="products-feedback__message">{error}</p>
+        <section className={`${ui.feedback} ${ui.feedbackError}`} role="alert">
+          <p className={ui.feedbackTitle}>Falha ao carregar formulário</p>
+          <p className={ui.feedbackMessage}>{error}</p>
           <button
             type="button"
-            className="products-feedback__retry-button"
+            className={ui.retryButton}
             onClick={() => setReRender(true)}
           >
             Tentar novamente
@@ -324,32 +326,32 @@ export const RecipeFormPage = (): React.JSX.Element => {
 
   if (loading) {
     return (
-      <section className="products-page">
+      <section className={ui.page}>
         <header className="page-header">
           <h2 className="page-header__title">{isEditing ? 'Editar Receita' : 'Nova Receita'}</h2>
         </header>
 
-        <section className="products-feedback" aria-live="polite">
-          <p className="products-feedback__title">Carregando formulário da receita...</p>
+        <section className={ui.feedback} aria-live="polite">
+          <p className={ui.feedbackTitle}>Carregando formulário da receita...</p>
         </section>
       </section>
     );
   }
 
   return (
-    <section className="products-page">
+    <section className={ui.page}>
       <header className="page-header">
-        <p className="products-page__eyebrow">Cadastro completo</p>
+        <p className={ui.eyebrow}>Cadastro completo</p>
         <h2 className="page-header__title">{isEditing ? 'Editar Receita' : 'Nova Receita'}</h2>
         <p className="page-header__description">
           Monte a composicao da receita com ingredientes, embalagens e grupo obrigatorio.
         </p>
       </header>
 
-      <form className="recipe-form-page" onSubmit={handleSubmit}>
-        <section className="data-grid recipe-form-page__section">
-          <div className="recipe-form-page__grid">
-            <label className="product-form__field recipe-form-page__field--wide">
+      <form className={styles.recipeFormPage} onSubmit={handleSubmit}>
+        <section className={`${styles.sectionPanel} ${styles.section}`}>
+          <div className={styles.grid}>
+            <label className={`${ui.field} ${styles.fieldWide}`}>
               <span>Nome</span>
               <input
                 name="name"
@@ -359,18 +361,18 @@ export const RecipeFormPage = (): React.JSX.Element => {
               />
             </label>
 
-            <label className="product-form__field recipe-form-page__field--wide">
+            <label className={`${ui.field} ${styles.fieldWide}`}>
               <span>Descrição</span>
               <textarea
-                className="recipe-form-page__textarea"
+                className={styles.textarea}
                 name="description"
                 onChange={handleFieldChange('description')}
                 value={formState.description}
               />
             </label>
 
-            <div className="product-form__grid recipe-form-page__field--wide">
-              <label className="product-form__field">
+            <div className={`${ui.formGrid} ${styles.fieldWide}`}>
+              <label className={ui.field}>
                 <span>Quantidade Produzida</span>
                 <input
                   min="0"
@@ -382,7 +384,7 @@ export const RecipeFormPage = (): React.JSX.Element => {
                 />
               </label>
 
-              <label className="product-form__field">
+              <label className={ui.field}>
                 <span>Preço de Venda da Unidade</span>
                 <input
                   min="0"
@@ -395,10 +397,10 @@ export const RecipeFormPage = (): React.JSX.Element => {
               </label>
             </div>
 
-            <div className="recipe-form-page__group-row recipe-form-page__field--wide">
+            <div className={`${styles.groupRow} ${styles.fieldWide}`}>
               {groups.length ? (
                 <>
-                  <label className="product-form__field recipe-form-page__group-field">
+                  <label className={`${ui.field} ${styles.groupField}`}>
                     <span>Grupo</span>
                     <select
                       name="groupId"
@@ -415,7 +417,7 @@ export const RecipeFormPage = (): React.JSX.Element => {
                   </label>
                   <button
                     type="button"
-                    className="products-actions__button"
+                    className={ui.actionButton}
                     onClick={() => setIsGroupModalOpen(true)}
                   >
                     Novo
@@ -424,7 +426,7 @@ export const RecipeFormPage = (): React.JSX.Element => {
               ) : (
                 <button
                   type="button"
-                  className="products-page__add-button"
+                  className={ui.primaryButton}
                   onClick={() => setIsGroupModalOpen(true)}
                 >
                   Criar Grupo
@@ -434,30 +436,30 @@ export const RecipeFormPage = (): React.JSX.Element => {
           </div>
         </section>
 
-        <section className="data-grid recipe-form-page__section">
-          <div className="recipe-form-page__section-header">
+        <section className={`${styles.sectionPanel} ${styles.section}`}>
+          <div className={styles.sectionHeader}>
             <div>
-              <h3 className="recipe-form-page__section-title">Ingredientes</h3>
-              <p className="recipe-form-page__section-description">
+              <h3 className={styles.sectionTitle}>Ingredientes</h3>
+              <p className={styles.sectionDescription}>
                 Adicione ao menos uma matéria-prima para compor a receita.
               </p>
             </div>
             <button
               type="button"
-              className="products-actions__button"
+              className={ui.actionButton}
               onClick={() => setIsIngredientModalOpen(true)}
             >
               Buscar Matéria Prima
             </button>
           </div>
 
-          <div className="recipe-form-page__tags">
+          <div className={styles.tags}>
             {ingredients.length ? (
               ingredients.map((ingredient, index) => (
-                <div key={`${ingredient.ingredientId}-${index}`} className="recipe-form-page__tag">
+                <div key={`${ingredient.ingredientId}-${index}`} className={styles.tag}>
                   <button
                     type="button"
-                    className="recipe-form-page__tag-button"
+                    className={styles.tagButton}
                     onClick={() => {
                       setEditingIngredientIndex(index);
                       setIsIngredientModalOpen(true);
@@ -467,7 +469,7 @@ export const RecipeFormPage = (): React.JSX.Element => {
                   </button>
                   <button
                     type="button"
-                    className="recipe-form-page__tag-remove"
+                    className={styles.tagRemove}
                     aria-label={`Remover ${buildIngredientLabel(ingredient, ingredientsOptions)}`}
                     onClick={() =>
                       setIngredients((currentItems) =>
@@ -480,35 +482,35 @@ export const RecipeFormPage = (): React.JSX.Element => {
                 </div>
               ))
             ) : (
-              <p className="recipe-form-page__empty">Nenhuma matéria-prima adicionada.</p>
+              <p className={styles.empty}>Nenhuma matéria-prima adicionada.</p>
             )}
           </div>
         </section>
 
-        <section className="data-grid recipe-form-page__section">
-          <div className="recipe-form-page__section-header">
+        <section className={`${styles.sectionPanel} ${styles.section}`}>
+          <div className={styles.sectionHeader}>
             <div>
-              <h3 className="recipe-form-page__section-title">Embalagens</h3>
-              <p className="recipe-form-page__section-description">
+              <h3 className={styles.sectionTitle}>Embalagens</h3>
+              <p className={styles.sectionDescription}>
                 Adicione embalagens quando elas fizerem parte do custo final.
               </p>
             </div>
             <button
               type="button"
-              className="products-actions__button"
+              className={ui.actionButton}
               onClick={() => setIsPackingModalOpen(true)}
             >
               Buscar Embalagem
             </button>
           </div>
 
-          <div className="recipe-form-page__tags">
+          <div className={styles.tags}>
             {packings.length ? (
               packings.map((packing, index) => (
-                <div key={`${packing.packingId}-${index}`} className="recipe-form-page__tag">
+                <div key={`${packing.packingId}-${index}`} className={styles.tag}>
                   <button
                     type="button"
-                    className="recipe-form-page__tag-button"
+                    className={styles.tagButton}
                     onClick={() => {
                       setEditingPackingIndex(index);
                       setIsPackingModalOpen(true);
@@ -518,7 +520,7 @@ export const RecipeFormPage = (): React.JSX.Element => {
                   </button>
                   <button
                     type="button"
-                    className="recipe-form-page__tag-remove"
+                    className={styles.tagRemove}
                     aria-label={`Remover ${buildPackingLabel(packing, packingOptions)}`}
                     onClick={() =>
                       setPackings((currentItems) =>
@@ -531,37 +533,33 @@ export const RecipeFormPage = (): React.JSX.Element => {
                 </div>
               ))
             ) : (
-              <p className="recipe-form-page__empty">Nenhuma embalagem adicionada.</p>
+              <p className={styles.empty}>Nenhuma embalagem adicionada.</p>
             )}
           </div>
         </section>
 
-        <section className="data-grid recipe-form-page__section">
-          <div className="recipe-form-page__metrics">
-            <article>
-              <span className="products-page__eyebrow">Custo estimado</span>
-              <strong>{formatCurrency(estimatedTotalCost)}</strong>
+        <section className={`${styles.sectionPanel} ${styles.section}`}>
+          <div className={styles.metrics}>
+            <article className={styles.metricCard}>
+              <span className={ui.eyebrow}>Custo estimado</span>
+              <strong className={styles.metricValue}>{formatCurrency(estimatedTotalCost)}</strong>
             </article>
-            <article>
-              <span className="products-page__eyebrow">Custo por unidade</span>
-              <strong>{formatCurrency(estimatedUnitCost)}</strong>
+            <article className={styles.metricCard}>
+              <span className={ui.eyebrow}>Custo por unidade</span>
+              <strong className={styles.metricValue}>{formatCurrency(estimatedUnitCost)}</strong>
             </article>
-            <article>
-              <span className="products-page__eyebrow">Lucro por unidade</span>
-              <strong>{formatCurrency(estimatedProfitPerUnit)}</strong>
+            <article className={styles.metricCard}>
+              <span className={ui.eyebrow}>Lucro por unidade</span>
+              <strong className={styles.metricValue}>{formatCurrency(estimatedProfitPerUnit)}</strong>
             </article>
           </div>
         </section>
 
-        <footer className="recipe-form-page__footer">
-          <button
-            className="modal__secondary-button"
-            type="button"
-            onClick={() => navigate('/recipes')}
-          >
+        <footer className={styles.footer}>
+          <button className={styles.secondaryButton} type="button" onClick={() => navigate('/recipes')}>
             Cancelar
           </button>
-          <button className="modal__primary-button" disabled={saving} type="submit">
+          <button className={styles.primaryButton} disabled={saving} type="submit">
             {saving ? 'Salvando...' : 'Salvar'}
           </button>
         </footer>

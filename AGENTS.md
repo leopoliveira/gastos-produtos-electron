@@ -34,7 +34,7 @@ Current repo facts that matter:
 - Fuse hardening is already enabled in [`forge.config.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/forge.config.ts)
 - The current `webPreferences` in [`main-window.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/windows/main-window.ts) explicitly set `preload`, `contextIsolation: true`, `nodeIntegration: false`, and `sandbox: true`
 - The current window setup is split between [`index.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/index.ts) and [`main-window.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/windows/main-window.ts), but is still close to the starter template in behavior and must not be treated as the final security baseline
-- The current HTML in [`index.html`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/index.html) does not yet define a CSP
+- The current HTML in [`index.html`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/index.html) already defines a CSP and agents must preserve or tighten it when renderer assets change
 - The current preload in [`index.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/preload/index.ts) is empty, which is preferable to exposing broad APIs
 
 When agents add features, they must move the project toward a stricter Electron posture, not away from it.
@@ -236,6 +236,14 @@ if (!app.isPackaged) {
 - Keep renderer modules split by feature as the UI grows.
 - Avoid hidden side effects at module import time.
 - Avoid large startup-only imports when the screen can render first and enhance later.
+- Keep CSS and styling co-located with the component or page that owns the UI whenever possible.
+- Prefer `*.module.css` for component- and page-scoped styles.
+- Keep [`index.css`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/styles/index.css) limited to app-wide imports plus truly global concerns such as tokens, resets, shared layout primitives, and a small set of reusable utility or form styles.
+- Put shared renderer-wide CSS in focused files under [`src/renderer/styles/`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/styles/) such as tokens, base, and layout, instead of growing one catch-all stylesheet.
+- Do not add component selectors to global styles when a CSS Module can express the same rule.
+- Keep responsive rules with the same owner as the base rule. If a component uses a CSS Module, its media queries belong in that module too.
+- When a style block is only used by one feature route, move it into that feature folder instead of keeping it in global CSS.
+- Prefer explicit class composition over broad descendant selectors that couple one feature to another feature's stylesheet.
 
 ### `src/renderer/index.html`
 
@@ -302,3 +310,16 @@ This guide is grounded in Electron official guidance plus current ecosystem prac
 - Electron Fuses: https://www.electronjs.org/docs/latest/tutorial/fuses
 
 When those recommendations evolve, update this file to match the stricter safe default.
+
+## Current CSS Pattern
+
+Use this repository pattern unless a task has a documented reason to do otherwise:
+
+- [`src/renderer/styles/index.css`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/styles/index.css) should only import global style entry files.
+- Global renderer styles belong in focused files under [`src/renderer/styles/`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/styles/): [`tokens.css`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/styles/tokens.css), [`base.css`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/styles/base.css), and [`layout.css`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/styles/layout.css).
+- Reusable renderer UI primitives that are still shared across features should live in [`shared-ui.module.css`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/styles/shared-ui.module.css) and be imported explicitly by consumers.
+- Component styles should live beside the component, for example `components/sidebar/index.tsx` with `components/sidebar/sidebar.module.css`.
+- Page or route styles should live beside the page, for example `pages/recipes/recipe-form-page.tsx` with `pages/recipes/recipe-form-page.module.css`.
+- Do not reintroduce large global BEM blocks into [`index.css`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/styles/index.css).
+- If a selector is only used by one component or one route, it should not live in [`shared-ui.module.css`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/styles/shared-ui.module.css).
+- If a module owns a responsive behavior, keep the related media query in the same CSS Module.

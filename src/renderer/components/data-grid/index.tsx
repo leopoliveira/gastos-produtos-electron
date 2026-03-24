@@ -1,7 +1,9 @@
 import type React from 'react';
 import { useId, useState } from 'react';
 
-import { normalizeString } from '../../shared/string';
+import { normalizeString } from '../../../shared/string';
+import styles from './data-grid.module.css';
+import ui from '../../styles/shared-ui.module.css';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -106,22 +108,26 @@ export const DataGrid = <T,>({
   };
 
   return (
-    <section className="data-grid" aria-label="Lista de registros">
-      <div className="data-grid__header">
-        <p className="data-grid__title">{title}</p>
+    <section className={styles.dataGrid} aria-label="Lista de registros">
+      <div className={styles.header}>
+        <p className={styles.title}>{title}</p>
         {onAdd ? (
-          <button type="button" className="products-page__add-button" onClick={onAdd}>
+          <button
+            type="button"
+            className={`${ui.primaryButton} ${styles.addButton}`}
+            onClick={onAdd}
+          >
             {addLabel}
           </button>
         ) : null}
       </div>
 
-      <div className="data-grid__toolbar">
-        <label className="data-grid__filter" htmlFor={filterId}>
-          <span className="data-grid__filter-label">{filterLabel}</span>
+      <div className={styles.toolbar}>
+        <label className={styles.filter} htmlFor={filterId}>
+          <span className={styles.filterLabel}>{filterLabel}</span>
           <input
             id={filterId}
-            className="data-grid__filter-input"
+            className={styles.filterInput}
             name={filterId}
             type="text"
             value={filter}
@@ -132,8 +138,8 @@ export const DataGrid = <T,>({
         {toolbarContent}
       </div>
 
-      <div className="data-grid__table-wrapper">
-        <table className="data-grid__table">
+      <div className={styles.tableWrapper}>
+        <table className={styles.table}>
           <thead>
             <tr>
               {resolvedColumns.map((column) => (
@@ -141,11 +147,11 @@ export const DataGrid = <T,>({
                   {column.sortable ? (
                     <button
                       type="button"
-                      className="data-grid__sort-button"
+                      className={styles.sortButton}
                       onClick={() => handleSort(column)}
                     >
                       <span>{column.header}</span>
-                      <span className="data-grid__sort-indicator" aria-hidden="true">
+                      <span className={styles.sortIndicator} aria-hidden="true">
                         {sortColumn === column.key ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}
                       </span>
                     </button>
@@ -167,7 +173,7 @@ export const DataGrid = <T,>({
               ))
             ) : (
               <tr>
-                <td className="data-grid__empty-cell" colSpan={resolvedColumns.length}>
+                <td className={styles.emptyCell} colSpan={resolvedColumns.length}>
                   {emptyMessage}
                 </td>
               </tr>

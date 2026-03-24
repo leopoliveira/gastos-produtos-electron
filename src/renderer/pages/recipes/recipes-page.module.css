@@ -1,0 +1,27 @@
+.groupFilter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(100%, 320px);
+}
+
+.groupFilterLabel {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #7b5a47;
+}
+
+.groupFilterInput {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(120, 79, 51, 0.2);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #2d1c12;
+}
+
+@media (max-width: 900px) {
+  .groupFilter {
+    width: 100%;
+  }
+}

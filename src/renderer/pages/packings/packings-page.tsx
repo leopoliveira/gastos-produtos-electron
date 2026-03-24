@@ -12,6 +12,7 @@ import { DataGrid, type DataGridColumn } from '../../components/data-grid';
 import { PackingService } from '../../services/packing-service';
 import { DeletePackingModal } from './delete-packing-modal';
 import { PackingFormModal } from './packing-form-modal';
+import ui from '../../styles/shared-ui.module.css';
 
 const buildPackingColumns = (): DataGridColumn<IReadPacking>[] => [
   {
@@ -161,10 +162,10 @@ export const PackingsPage = (): React.JSX.Element => {
   const columns = buildPackingColumns();
 
   return (
-    <section className="products-page">
+    <section className={ui.page}>
       <header className="page-header">
         <div>
-          <p className="products-page__eyebrow">Cadastro e consulta</p>
+          <p className={ui.eyebrow}>Cadastro e consulta</p>
           <h2 className="page-header__title">Embalagens</h2>
           <p className="page-header__description">
             Organize as embalagens com referencia clara de quantidade, preco e custo
@@ -174,7 +175,7 @@ export const PackingsPage = (): React.JSX.Element => {
         {loading && !packings.length ? (
           <button
             type="button"
-            className="products-page__add-button"
+            className={ui.primaryButton}
             onClick={() => {
               setPackingInEdition(null);
               setIsCreateModalOpen(true);
@@ -186,12 +187,12 @@ export const PackingsPage = (): React.JSX.Element => {
       </header>
 
       {error ? (
-        <section className="products-feedback products-feedback--error" role="alert">
-          <p className="products-feedback__title">Falha ao carregar embalagens</p>
-          <p className="products-feedback__message">{error}</p>
+        <section className={`${ui.feedback} ${ui.feedbackError}`} role="alert">
+          <p className={ui.feedbackTitle}>Falha ao carregar embalagens</p>
+          <p className={ui.feedbackMessage}>{error}</p>
           <button
             type="button"
-            className="products-feedback__retry-button"
+            className={ui.retryButton}
             onClick={() => setReRender(true)}
           >
             Tentar novamente
@@ -200,14 +201,14 @@ export const PackingsPage = (): React.JSX.Element => {
       ) : (
         <>
           {loading && !packings.length ? (
-            <section className="products-feedback" aria-live="polite">
-              <p className="products-feedback__title">Carregando embalagens...</p>
+            <section className={ui.feedback} aria-live="polite">
+              <p className={ui.feedbackTitle}>Carregando embalagens...</p>
             </section>
           ) : (
             <>
               {loading ? (
-                <section className="products-feedback" aria-live="polite">
-                  <p className="products-feedback__title">Carregando embalagens...</p>
+                <section className={ui.feedback} aria-live="polite">
+                  <p className={ui.feedbackTitle}>Carregando embalagens...</p>
                 </section>
               ) : null}
 
@@ -218,10 +219,10 @@ export const PackingsPage = (): React.JSX.Element => {
                 filterLabel="Filtrar por Nome"
                 filterPlaceholder="Digite para buscar"
                 actionsRenderer={(packing) => (
-                  <div className="products-actions">
+                  <div className={ui.actions}>
                     <button
                       type="button"
-                      className="products-actions__button"
+                      className={ui.actionButton}
                       onClick={() => {
                         setPackingInEdition(packing);
                         setIsCreateModalOpen(false);
@@ -231,7 +232,7 @@ export const PackingsPage = (): React.JSX.Element => {
                     </button>
                     <button
                       type="button"
-                      className="products-actions__button products-actions__button--danger"
+                      className={`${ui.actionButton} ${ui.dangerButton}`}
                       onClick={() => setPackingPendingDeletion(packing)}
                     >
                       Excluir

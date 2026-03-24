@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import type { IReadProduct } from '../../../shared/products';
 import type { IRecipeIngredientInput } from '../../../shared/recipes';
 import { Modal, ModalActions } from '../../components/modal';
+import ui from '../../styles/shared-ui.module.css';
 
 type IngredientFormModalProps = {
   ingredients: IReadProduct[];
@@ -43,8 +44,8 @@ export const IngredientFormModal = ({
       description="Selecione a matéria-prima e informe a quantidade usada na receita."
       onClose={onClose}
     >
-      <form className="product-form" onSubmit={handleSubmit}>
-        <label className="product-form__field">
+      <form className={ui.form} onSubmit={handleSubmit}>
+        <label className={ui.field}>
           <span>Matéria Prima</span>
           <select
             name="ingredientId"
@@ -60,7 +61,7 @@ export const IngredientFormModal = ({
           </select>
         </label>
 
-        <label className="product-form__field">
+        <label className={ui.field}>
           <span>Quantidade</span>
           <input
             min="0"

@@ -1,0 +1,133 @@
+.dataGrid {
+  padding: 22px;
+  border: 1px solid rgba(120, 79, 51, 0.14);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 238, 229, 0.96));
+}
+
+.header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.title {
+  grid-column: 2;
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  text-align: center;
+  color: #3d281d;
+}
+
+.addButton {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.toolbar {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(100%, 320px);
+}
+
+.filterLabel {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #7b5a47;
+}
+
+.filterInput {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(120, 79, 51, 0.2);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #2d1c12;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 16px 14px;
+  text-align: left;
+}
+
+.table thead th {
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8e6b55;
+}
+
+.table tbody tr + tr {
+  border-top: 1px solid rgba(120, 79, 51, 0.12);
+}
+
+.table tbody td {
+  color: #4a3225;
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+.sortIndicator {
+  font-size: 0.85rem;
+}
+
+.emptyCell {
+  color: #7b5a47;
+}
+
+@media (max-width: 900px) {
+  .toolbar {
+    justify-content: stretch;
+  }
+
+  .header {
+    grid-template-columns: 1fr;
+  }
+
+  .title,
+  .addButton {
+    grid-column: auto;
+  }
+
+  .addButton {
+    justify-self: stretch;
+  }
+
+  .filter {
+    width: 100%;
+  }
+}

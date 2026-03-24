@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import type { IReadPacking } from '../../../shared/packings';
 import type { IRecipePackingInput } from '../../../shared/recipes';
 import { Modal, ModalActions } from '../../components/modal';
+import ui from '../../styles/shared-ui.module.css';
 
 type PackingSelectionModalProps = {
   packings: IReadPacking[];
@@ -43,8 +44,8 @@ export const PackingSelectionModal = ({
       description="Selecione a embalagem e informe a quantidade usada na receita."
       onClose={onClose}
     >
-      <form className="product-form" onSubmit={handleSubmit}>
-        <label className="product-form__field">
+      <form className={ui.form} onSubmit={handleSubmit}>
+        <label className={ui.field}>
           <span>Embalagem</span>
           <select
             name="packingId"
@@ -60,7 +61,7 @@ export const PackingSelectionModal = ({
           </select>
         </label>
 
-        <label className="product-form__field">
+        <label className={ui.field}>
           <span>Quantidade</span>
           <input
             min="0"

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import styles from './breadcrumb.module.css';
 
 type BreadcrumbItem = {
   label: string;
@@ -11,11 +12,11 @@ type BreadcrumbProps = {
 };
 
 export const Breadcrumb = ({ items }: BreadcrumbProps): React.JSX.Element => (
-  <nav className="breadcrumbs" aria-label="Breadcrumb">
+  <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
     {items.map((item, index) => (
       <React.Fragment key={`${item.label}-${index}`}>
         {index > 0 ? (
-          <span className="breadcrumbs__separator" aria-hidden="true">
+          <span className={styles.separator} aria-hidden="true">
             /
           </span>
         ) : null}

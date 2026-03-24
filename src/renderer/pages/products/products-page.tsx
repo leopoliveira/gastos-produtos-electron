@@ -9,6 +9,7 @@ import { getUnitOfMeasureLabel } from '../../../shared/unit-of-measure';
 import { DeleteProductModal } from './delete-product-modal';
 import { ProductFormModal } from './product-form-modal';
 import { ProductService } from '../../services/product-service';
+import ui from '../../styles/shared-ui.module.css';
 
 const buildProductColumns = (): DataGridColumn<IReadProduct>[] => [
   {
@@ -161,10 +162,10 @@ export const ProductsPage = (): React.JSX.Element => {
   const columns = buildProductColumns();
 
   return (
-    <section className="products-page">
+    <section className={ui.page}>
       <header className="page-header">
         <div>
-          <p className="products-page__eyebrow">Cadastro e consulta</p>
+          <p className={ui.eyebrow}>Cadastro e consulta</p>
           <h2 className="page-header__title">Matéria Prima</h2>
           <p className="page-header__description">
             Centralize os insumos usados nas receitas com referência clara de quantidade,
@@ -174,7 +175,7 @@ export const ProductsPage = (): React.JSX.Element => {
         {loading && !products.length ? (
           <button
             type="button"
-            className="products-page__add-button"
+            className={ui.primaryButton}
             onClick={() => {
               setProductInEdition(null);
               setIsCreateModalOpen(true);
@@ -186,12 +187,12 @@ export const ProductsPage = (): React.JSX.Element => {
       </header>
 
       {error ? (
-        <section className="products-feedback products-feedback--error" role="alert">
-          <p className="products-feedback__title">Falha ao carregar matérias-primas</p>
-          <p className="products-feedback__message">{error}</p>
+        <section className={`${ui.feedback} ${ui.feedbackError}`} role="alert">
+          <p className={ui.feedbackTitle}>Falha ao carregar matérias-primas</p>
+          <p className={ui.feedbackMessage}>{error}</p>
           <button
             type="button"
-            className="products-feedback__retry-button"
+            className={ui.retryButton}
             onClick={() => setReRender(true)}
           >
             Tentar novamente
@@ -200,14 +201,14 @@ export const ProductsPage = (): React.JSX.Element => {
       ) : (
         <>
           {loading && !products.length ? (
-            <section className="products-feedback" aria-live="polite">
-              <p className="products-feedback__title">Carregando matérias-primas...</p>
+            <section className={ui.feedback} aria-live="polite">
+              <p className={ui.feedbackTitle}>Carregando matérias-primas...</p>
             </section>
           ) : (
             <>
               {loading ? (
-                <section className="products-feedback" aria-live="polite">
-                  <p className="products-feedback__title">Carregando matérias-primas...</p>
+                <section className={ui.feedback} aria-live="polite">
+                  <p className={ui.feedbackTitle}>Carregando matérias-primas...</p>
                 </section>
               ) : null}
 
@@ -218,10 +219,10 @@ export const ProductsPage = (): React.JSX.Element => {
                 filterLabel="Filtrar por Nome"
                 filterPlaceholder="Digite para buscar"
                 actionsRenderer={(product) => (
-                  <div className="products-actions">
+                  <div className={ui.actions}>
                     <button
                       type="button"
-                      className="products-actions__button"
+                      className={ui.actionButton}
                       onClick={() => {
                         setProductInEdition(product);
                         setIsCreateModalOpen(false);
@@ -231,7 +232,7 @@ export const ProductsPage = (): React.JSX.Element => {
                     </button>
                     <button
                       type="button"
-                      className="products-actions__button products-actions__button--danger"
+                      className={`${ui.actionButton} ${ui.dangerButton}`}
                       onClick={() => setProductPendingDeletion(product)}
                     >
                       Excluir

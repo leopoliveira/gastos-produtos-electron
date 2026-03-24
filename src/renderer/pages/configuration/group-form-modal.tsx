@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import type { ICreateGroup, IReadGroup } from '../../../shared/groups';
 import { Modal, ModalActions } from '../../components/modal';
+import ui from '../../styles/shared-ui.module.css';
 
 type GroupFormModalProps = {
   group?: IReadGroup;
@@ -63,8 +64,8 @@ export const GroupFormModal = ({
       description="Preencha os campos do grupo que será usado nas receitas."
       onClose={onClose}
     >
-      <form className="product-form" onSubmit={handleSubmit}>
-        <label className="product-form__field">
+      <form className={ui.form} onSubmit={handleSubmit}>
+        <label className={ui.field}>
           <span>Nome</span>
           <input
             aria-invalid={nameError ? 'true' : 'false'}
@@ -73,13 +74,13 @@ export const GroupFormModal = ({
             type="text"
             value={formState.name}
           />
-          {nameError ? <small className="form-field__error">{nameError}</small> : null}
+          {nameError ? <small className={ui.errorText}>{nameError}</small> : null}
         </label>
 
-        <label className="product-form__field">
+        <label className={ui.field}>
           <span>Descrição</span>
           <textarea
-            className="group-form__textarea"
+            className={ui.textareaLarge}
             name="description"
             onChange={handleFieldChange('description')}
             value={formState.description}

@@ -1,0 +1,153 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pageHeaderSplit {
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a46f4c;
+}
+
+.primaryButton,
+.actionButton,
+.retryButton {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+  font-weight: 700;
+}
+
+.primaryButton {
+  padding: 14px 22px;
+  background: linear-gradient(180deg, #7b3f28 0%, #5e2918 100%);
+  color: #fffaf7;
+  box-shadow: 0 14px 24px rgba(94, 41, 24, 0.2);
+}
+
+.actionButton {
+  padding: 10px 14px;
+  background: rgba(123, 63, 40, 0.12);
+  color: #6b3521;
+}
+
+.dangerButton {
+  background: rgba(160, 54, 38, 0.12);
+  color: #9f3424;
+}
+
+.retryButton {
+  padding: 12px 18px;
+  background: #9f3424;
+  color: #fffaf7;
+}
+
+.primaryButton:hover,
+.actionButton:hover {
+  transform: translateY(-1px);
+}
+
+.feedback {
+  padding: 22px;
+  border: 1px solid rgba(120, 79, 51, 0.14);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 238, 229, 0.96));
+}
+
+.feedbackError {
+  border-color: rgba(159, 52, 36, 0.28);
+  background: linear-gradient(180deg, rgba(255, 245, 242, 0.96), rgba(255, 233, 227, 0.98));
+}
+
+.feedbackTitle {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #5a4031;
+}
+
+.feedbackMessage {
+  margin: 0 0 18px;
+  color: #7b5a47;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field span {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #7b5a47;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(120, 79, 51, 0.2);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #2d1c12;
+}
+
+.textareaLarge {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.errorText {
+  color: #9f3424;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+@media (max-width: 960px) {
+  .pageHeaderSplit {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions {
+    flex-wrap: wrap;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}

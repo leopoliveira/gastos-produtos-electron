@@ -2,6 +2,7 @@ import type React from 'react';
 import { useState } from 'react';
 
 import { Modal, ModalActions } from '../../components/modal';
+import ui from '../../styles/shared-ui.module.css';
 
 type GroupFormModalProps = {
   onClose: () => void;
@@ -25,8 +26,8 @@ export const GroupFormModal = ({
       description="Crie um grupo sem sair do formulario da receita."
       onClose={onClose}
     >
-      <form className="product-form" onSubmit={handleSubmit}>
-        <label className="product-form__field">
+      <form className={ui.form} onSubmit={handleSubmit}>
+        <label className={ui.field}>
           <span>Nome</span>
           <input
             name="name"

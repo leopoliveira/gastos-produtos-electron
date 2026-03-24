@@ -6,6 +6,8 @@ import type { IReadRecipe } from '../../../shared/recipes';
 import { formatCurrency } from '../../../shared/format';
 import { getUnitOfMeasureLabel } from '../../../shared/unit-of-measure';
 import { RecipeService } from '../../services/recipe-service';
+import ui from '../../styles/shared-ui.module.css';
+import styles from './recipe-visualization-page.module.css';
 
 const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
   if (typeof error === 'object' && error !== null) {
@@ -77,12 +79,12 @@ export const RecipeVisualizationPage = (): React.JSX.Element => {
 
   if (loading) {
     return (
-      <section className="products-page">
+      <section className={ui.page}>
         <header className="page-header">
           <h2 className="page-header__title">Visualizar Receita</h2>
         </header>
-        <section className="products-feedback" aria-live="polite">
-          <p className="products-feedback__title">Carregando receita...</p>
+        <section className={ui.feedback} aria-live="polite">
+          <p className={ui.feedbackTitle}>Carregando receita...</p>
         </section>
       </section>
     );
@@ -90,23 +92,23 @@ export const RecipeVisualizationPage = (): React.JSX.Element => {
 
   if (error || !recipe) {
     return (
-      <section className="products-page">
+      <section className={ui.page}>
         <header className="page-header">
           <h2 className="page-header__title">Visualizar Receita</h2>
         </header>
-        <section className="products-feedback products-feedback--error" role="alert">
-          <p className="products-feedback__title">Falha ao carregar receita</p>
-          <p className="products-feedback__message">{error ?? 'Receita não encontrada.'}</p>
+        <section className={`${ui.feedback} ${ui.feedbackError}`} role="alert">
+          <p className={ui.feedbackTitle}>Falha ao carregar receita</p>
+          <p className={ui.feedbackMessage}>{error ?? 'Receita não encontrada.'}</p>
         </section>
       </section>
     );
   }
 
   return (
-    <section className="products-page">
-      <header className="page-header products-page__header">
+    <section className={ui.page}>
+      <header className={`page-header ${ui.pageHeaderSplit}`}>
         <div>
-          <p className="products-page__eyebrow">Visualização analítica</p>
+          <p className={ui.eyebrow}>Visualização analítica</p>
           <h2 className="page-header__title">{recipe.name}</h2>
           <p className="page-header__description">
             {recipe.groupName ? `Grupo: ${recipe.groupName}` : 'Grupo não informado'}
@@ -118,64 +120,61 @@ export const RecipeVisualizationPage = (): React.JSX.Element => {
 
         <button
           type="button"
-          className="products-page__add-button"
+          className={ui.primaryButton}
           onClick={() => navigate('/recipes')}
         >
           Voltar
         </button>
       </header>
 
-      <section className="recipe-form-page__metrics">
-        <article>
-          <span className="products-page__eyebrow">Custo total</span>
-          <strong>{formatCurrency(recipe.totalCost)}</strong>
+      <section className={styles.metrics}>
+        <article className={styles.metricCard}>
+          <span className={ui.eyebrow}>Custo total</span>
+          <strong className={styles.metricValue}>{formatCurrency(recipe.totalCost)}</strong>
         </article>
-        <article>
-          <span className="products-page__eyebrow">Quantidade produzida</span>
-          <strong>{recipe.quantity}</strong>
+        <article className={styles.metricCard}>
+          <span className={ui.eyebrow}>Quantidade produzida</span>
+          <strong className={styles.metricValue}>{recipe.quantity}</strong>
         </article>
-        <article>
-          <span className="products-page__eyebrow">Custo por unidade</span>
-          <strong>{formatCurrency(getUnitCost(recipe))}</strong>
+        <article className={styles.metricCard}>
+          <span className={ui.eyebrow}>Custo por unidade</span>
+          <strong className={styles.metricValue}>{formatCurrency(getUnitCost(recipe))}</strong>
         </article>
-        <article>
-          <span className="products-page__eyebrow">Preço de venda</span>
-          <strong>{formatCurrency(recipe.sellingValue)}</strong>
+        <article className={styles.metricCard}>
+          <span className={ui.eyebrow}>Preço de venda</span>
+          <strong className={styles.metricValue}>{formatCurrency(recipe.sellingValue)}</strong>
         </article>
-        <article>
-          <span className="products-page__eyebrow">Lucro por unidade</span>
-          <strong>{formatCurrency(getProfitPerUnit(recipe))}</strong>
+        <article className={styles.metricCard}>
+          <span className={ui.eyebrow}>Lucro por unidade</span>
+          <strong className={styles.metricValue}>{formatCurrency(getProfitPerUnit(recipe))}</strong>
         </article>
-        <article>
-          <span className="products-page__eyebrow">Lucro total</span>
-          <strong>{formatCurrency(getTotalProfit(recipe))}</strong>
+        <article className={styles.metricCard}>
+          <span className={ui.eyebrow}>Lucro total</span>
+          <strong className={styles.metricValue}>{formatCurrency(getTotalProfit(recipe))}</strong>
         </article>
       </section>
 
-      <section className="recipe-visualization__section">
-        <div className="recipe-form-page__section-header">
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
           <div>
-            <h3 className="recipe-form-page__section-title">Ingredientes</h3>
-            <p className="recipe-form-page__section-description">
+            <h3 className={styles.sectionTitle}>Ingredientes</h3>
+            <p className={styles.sectionDescription}>
               Custos detalhados por matéria-prima utilizada.
             </p>
           </div>
         </div>
 
-        <div className="recipe-visualization__cards">
+        <div className={styles.cards}>
           {recipe.ingredients.map((ingredient) => (
-            <article
-              key={`${ingredient.ingredientId}-${ingredient.quantity}`}
-              className="recipe-visualization__card"
-            >
-              <h4 className="recipe-visualization__card-title">{ingredient.name}</h4>
-              <p className="recipe-visualization__card-copy">
+            <article key={`${ingredient.ingredientId}-${ingredient.quantity}`} className={styles.card}>
+              <h4 className={styles.cardTitle}>{ingredient.name}</h4>
+              <p className={styles.cardCopy}>
                 Quantidade: {ingredient.quantity} {getUnitOfMeasureLabel(ingredient.unitOfMeasure)}
               </p>
-              <p className="recipe-visualization__card-copy">
+              <p className={styles.cardCopy}>
                 Preço unitário: {formatCurrency(ingredient.unitPrice)}
               </p>
-              <p className="recipe-visualization__card-total">
+              <p className={styles.cardTotal}>
                 Custo total: {formatCurrency(ingredient.totalCost)}
               </p>
             </article>
@@ -183,37 +182,34 @@ export const RecipeVisualizationPage = (): React.JSX.Element => {
         </div>
       </section>
 
-      <section className="recipe-visualization__section">
-        <div className="recipe-form-page__section-header">
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
           <div>
-            <h3 className="recipe-form-page__section-title">Embalagens</h3>
-            <p className="recipe-form-page__section-description">
+            <h3 className={styles.sectionTitle}>Embalagens</h3>
+            <p className={styles.sectionDescription}>
               Custos detalhados por embalagem associada.
             </p>
           </div>
         </div>
 
-        <div className="recipe-visualization__cards">
+        <div className={styles.cards}>
           {recipe.packings.length ? (
             recipe.packings.map((packing) => (
-              <article
-                key={`${packing.packingId}-${packing.quantity}`}
-                className="recipe-visualization__card"
-              >
-                <h4 className="recipe-visualization__card-title">{packing.name}</h4>
-                <p className="recipe-visualization__card-copy">
+              <article key={`${packing.packingId}-${packing.quantity}`} className={styles.card}>
+                <h4 className={styles.cardTitle}>{packing.name}</h4>
+                <p className={styles.cardCopy}>
                   Quantidade: {packing.quantity} {getUnitOfMeasureLabel(packing.unitOfMeasure)}
                 </p>
-                <p className="recipe-visualization__card-copy">
+                <p className={styles.cardCopy}>
                   Preço unitário: {formatCurrency(packing.unitPrice)}
                 </p>
-                <p className="recipe-visualization__card-total">
+                <p className={styles.cardTotal}>
                   Custo total: {formatCurrency(packing.totalCost)}
                 </p>
               </article>
             ))
           ) : (
-            <p className="recipe-form-page__empty">Nenhuma embalagem associada.</p>
+            <p className={styles.empty}>Nenhuma embalagem associada.</p>
           )}
         </div>
       </section>

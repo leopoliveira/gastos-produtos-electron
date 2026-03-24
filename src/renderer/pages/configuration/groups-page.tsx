@@ -7,6 +7,7 @@ import { DataGrid, type DataGridColumn } from '../../components/data-grid';
 import { GroupService } from '../../services/group-service';
 import { DeleteGroupModal } from './delete-group-modal';
 import { GroupFormModal } from './group-form-modal';
+import ui from '../../styles/shared-ui.module.css';
 
 const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
   if (typeof error === 'object' && error !== null) {
@@ -119,10 +120,10 @@ export const GroupsPage = (): React.JSX.Element => {
   const columns = buildGroupColumns();
 
   return (
-    <section className="products-page">
+    <section className={ui.page}>
       <header className="page-header">
         <div>
-          <p className="products-page__eyebrow">Cadastro auxiliar</p>
+          <p className={ui.eyebrow}>Cadastro auxiliar</p>
           <h2 className="page-header__title">Grupos de Receitas</h2>
           <p className="page-header__description">
             Cadastre e mantenha as classificações consumidas pelo filtro e pelo formulário de receitas.
@@ -131,7 +132,7 @@ export const GroupsPage = (): React.JSX.Element => {
         {loading && !groups.length ? (
           <button
             type="button"
-            className="products-page__add-button"
+            className={ui.primaryButton}
             onClick={() => {
               setGroupInEdition(null);
               setIsCreateModalOpen(true);
@@ -143,12 +144,12 @@ export const GroupsPage = (): React.JSX.Element => {
       </header>
 
       {error ? (
-        <section className="products-feedback products-feedback--error" role="alert">
-          <p className="products-feedback__title">Falha ao carregar grupos</p>
-          <p className="products-feedback__message">{error}</p>
+        <section className={`${ui.feedback} ${ui.feedbackError}`} role="alert">
+          <p className={ui.feedbackTitle}>Falha ao carregar grupos</p>
+          <p className={ui.feedbackMessage}>{error}</p>
           <button
             type="button"
-            className="products-feedback__retry-button"
+            className={ui.retryButton}
             onClick={() => setReRender(true)}
           >
             Tentar novamente
@@ -157,14 +158,14 @@ export const GroupsPage = (): React.JSX.Element => {
       ) : (
         <>
           {loading && !groups.length ? (
-            <section className="products-feedback" aria-live="polite">
-              <p className="products-feedback__title">Carregando grupos...</p>
+            <section className={ui.feedback} aria-live="polite">
+              <p className={ui.feedbackTitle}>Carregando grupos...</p>
             </section>
           ) : (
             <>
               {loading ? (
-                <section className="products-feedback" aria-live="polite">
-                  <p className="products-feedback__title">Carregando grupos...</p>
+                <section className={ui.feedback} aria-live="polite">
+                  <p className={ui.feedbackTitle}>Carregando grupos...</p>
                 </section>
               ) : null}
 
@@ -175,10 +176,10 @@ export const GroupsPage = (): React.JSX.Element => {
                 filterLabel="Filtrar por Nome"
                 filterPlaceholder="Digite para buscar"
                 actionsRenderer={(group) => (
-                  <div className="products-actions">
+                  <div className={ui.actions}>
                     <button
                       type="button"
-                      className="products-actions__button"
+                      className={ui.actionButton}
                       onClick={() => {
                         setGroupInEdition(group);
                         setIsCreateModalOpen(false);
@@ -188,7 +189,7 @@ export const GroupsPage = (): React.JSX.Element => {
                     </button>
                     <button
                       type="button"
-                      className="products-actions__button products-actions__button--danger"
+                      className={`${ui.actionButton} ${ui.dangerButton}`}
                       onClick={() => setGroupPendingDeletion(group)}
                     >
                       Excluir

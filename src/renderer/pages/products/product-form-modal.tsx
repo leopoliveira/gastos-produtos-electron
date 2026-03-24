@@ -9,6 +9,7 @@ import {
 } from '../../../shared/unit-of-measure';
 import { formatCurrency } from '../../../shared/format';
 import { Modal, ModalActions } from '../../components/modal';
+import ui from '../../styles/shared-ui.module.css';
 
 type ProductFormModalProps = {
   product?: IReadProduct;
@@ -69,8 +70,8 @@ export const ProductFormModal = ({
       description="Preencha os campos obrigatórios para salvar a matéria-prima."
       onClose={onClose}
     >
-      <form className="product-form" onSubmit={handleSubmit}>
-        <label className="product-form__field">
+      <form className={ui.form} onSubmit={handleSubmit}>
+        <label className={ui.field}>
           <span>Nome</span>
           <input
             name="name"
@@ -80,8 +81,8 @@ export const ProductFormModal = ({
           />
         </label>
 
-        <div className="product-form__grid">
-          <label className="product-form__field">
+        <div className={ui.formGrid}>
+          <label className={ui.field}>
             <span>Quantidade</span>
             <input
               min="0"
@@ -93,7 +94,7 @@ export const ProductFormModal = ({
             />
           </label>
 
-          <label className="product-form__field">
+          <label className={ui.field}>
             <span>Preço</span>
             <input
               min="0"
@@ -106,8 +107,8 @@ export const ProductFormModal = ({
           </label>
         </div>
 
-        <div className="product-form__grid">
-          <label className="product-form__field">
+        <div className={ui.formGrid}>
+          <label className={ui.field}>
             <span>Unidade de Medida</span>
             <select
               name="unitOfMeasure"
@@ -122,7 +123,7 @@ export const ProductFormModal = ({
             </select>
           </label>
 
-          <label className="product-form__field">
+          <label className={ui.field}>
             <span>Preço Unitário</span>
             <input readOnly type="text" value={formatCurrency(unitPrice)} />
           </label>

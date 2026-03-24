@@ -10,6 +10,8 @@ import { DataGrid, type DataGridColumn } from '../../components/data-grid';
 import { GroupService } from '../../services/group-service';
 import { RecipeService } from '../../services/recipe-service';
 import { DeleteRecipeModal } from './delete-recipe-modal';
+import ui from '../../styles/shared-ui.module.css';
+import styles from './recipes-page.module.css';
 
 const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
   if (typeof error === 'object' && error !== null) {
@@ -139,10 +141,10 @@ export const RecipesPage = (): React.JSX.Element => {
   };
 
   return (
-    <section className="products-page">
+    <section className={ui.page}>
       <header className="page-header">
         <div>
-          <p className="products-page__eyebrow">Cadastro e analise</p>
+          <p className={ui.eyebrow}>Cadastro e analise</p>
           <h2 className="page-header__title">Receitas</h2>
           <p className="page-header__description">
             Gerencie a composicao das receitas, acompanhe custos e mantenha a margem
@@ -152,7 +154,7 @@ export const RecipesPage = (): React.JSX.Element => {
         {loading && !recipes.length ? (
           <button
             type="button"
-            className="products-page__add-button"
+            className={ui.primaryButton}
             onClick={() => navigate('/recipes/new')}
           >
             Adicionar
@@ -161,12 +163,12 @@ export const RecipesPage = (): React.JSX.Element => {
       </header>
 
       {error ? (
-        <section className="products-feedback products-feedback--error" role="alert">
-          <p className="products-feedback__title">Falha ao carregar receitas</p>
-          <p className="products-feedback__message">{error}</p>
+        <section className={`${ui.feedback} ${ui.feedbackError}`} role="alert">
+          <p className={ui.feedbackTitle}>Falha ao carregar receitas</p>
+          <p className={ui.feedbackMessage}>{error}</p>
           <button
             type="button"
-            className="products-feedback__retry-button"
+            className={ui.retryButton}
             onClick={() => setReRender(true)}
           >
             Tentar novamente
@@ -175,14 +177,14 @@ export const RecipesPage = (): React.JSX.Element => {
       ) : (
         <>
           {loading && !recipes.length ? (
-            <section className="products-feedback" aria-live="polite">
-              <p className="products-feedback__title">Carregando receitas...</p>
+            <section className={ui.feedback} aria-live="polite">
+              <p className={ui.feedbackTitle}>Carregando receitas...</p>
             </section>
           ) : (
             <>
               {loading ? (
-                <section className="products-feedback" aria-live="polite">
-                  <p className="products-feedback__title">Carregando receitas...</p>
+                <section className={ui.feedback} aria-live="polite">
+                  <p className={ui.feedbackTitle}>Carregando receitas...</p>
                 </section>
               ) : null}
 
@@ -193,11 +195,11 @@ export const RecipesPage = (): React.JSX.Element => {
                 filterLabel="Filtrar por Nome"
                 filterPlaceholder="Digite para buscar"
                 toolbarContent={(
-                  <label className="data-grid__filter" htmlFor="recipe-group-filter">
-                    <span className="data-grid__filter-label">Filtrar por Grupo</span>
+                  <label className={styles.groupFilter} htmlFor="recipe-group-filter">
+                    <span className={styles.groupFilterLabel}>Filtrar por Grupo</span>
                     <select
                       id="recipe-group-filter"
-                      className="data-grid__filter-input"
+                      className={styles.groupFilterInput}
                       name="recipe-group-filter"
                       value={selectedGroupId}
                       onChange={(event) => setSelectedGroupId(event.target.value)}
@@ -212,24 +214,24 @@ export const RecipesPage = (): React.JSX.Element => {
                   </label>
                 )}
                 actionsRenderer={(recipe) => (
-                  <div className="products-actions">
+                  <div className={ui.actions}>
                     <button
                       type="button"
-                      className="products-actions__button"
+                      className={ui.actionButton}
                       onClick={() => navigate(`/recipes/visualize/${recipe.id}`)}
                     >
                       Visualizar
                     </button>
                     <button
                       type="button"
-                      className="products-actions__button"
+                      className={ui.actionButton}
                       onClick={() => navigate(`/recipes/${recipe.id}`)}
                     >
                       Editar
                     </button>
                     <button
                       type="button"
-                      className="products-actions__button products-actions__button--danger"
+                      className={`${ui.actionButton} ${ui.dangerButton}`}
                       onClick={() => setRecipePendingDeletion(recipe)}
                     >
                       Excluir

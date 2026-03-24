@@ -1,0 +1,12 @@
+:root {
+  color-scheme: light;
+  font-family: "Trebuchet MS", "Avenir Next", "Segoe UI Variable Text", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(255, 226, 194, 0.9), transparent 30%),
+    linear-gradient(180deg, #fff8ef 0%, #f6ecdf 100%);
+  color: #2d1c12;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

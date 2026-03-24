@@ -1,5 +1,19 @@
 import type { UnitOfMeasure } from './unit-of-measure';
 
+export interface IngredientDto {
+  productId: string;
+  productName: string;
+  quantity: number;
+  ingredientPrice: number;
+}
+
+export interface PackingDto {
+  packingId: string;
+  packingName: string;
+  quantity: number;
+  packingUnitPrice: number;
+}
+
 export interface IRecipeIngredientInput {
   ingredientId: string;
   quantity: number;
@@ -18,6 +32,10 @@ export interface ICreateRecipe {
   groupId?: string;
   ingredients: IRecipeIngredientInput[];
   packings: IRecipePackingInput[];
+}
+
+export interface IUpdateRecipe extends ICreateRecipe {
+  id: string;
 }
 
 export interface IRecipeIngredient extends IRecipeIngredientInput {

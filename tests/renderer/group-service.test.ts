@@ -1,16 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const groupHttpClientMocks = vi.hoisted(() => ({
+  deleteMock: vi.fn(),
+  getMock: vi.fn(),
+  postMock: vi.fn(),
+  putMock: vi.fn(),
+}));
+
+vi.mock('../../src/renderer/services/http/domain-clients', () => ({
+  getGroupHttpClient: () => ({
+    delete: groupHttpClientMocks.deleteMock,
+    get: groupHttpClientMocks.getMock,
+    post: groupHttpClientMocks.postMock,
+    put: groupHttpClientMocks.putMock,
+  }),
+}));
+
 describe('GroupService', () => {
   beforeEach(() => {
     vi.resetModules();
+    groupHttpClientMocks.deleteMock.mockReset();
+    groupHttpClientMocks.getMock.mockReset();
+    groupHttpClientMocks.postMock.mockReset();
+    groupHttpClientMocks.putMock.mockReset();
   });
 
-  it('returns the seed groups and puts created groups at the top of the list', async () => {
-    const { GroupService } = await import('../../src/renderer/services/group-service');
-
-    const initialGroups = await GroupService.getAllGroups();
-
-    expect(initialGroups).toEqual([
+  it('loads groups from the API client', async () => {
+    const groups = [
       {
         id: 'group-1',
         name: 'Brigadeiros',
@@ -21,78 +37,31 @@ describe('GroupService', () => {
         name: 'Bolos',
         description: 'Massas, recheios e coberturas para bolos.',
       },
-    ]);
+    ];
+    groupHttpClientMocks.getMock.mockResolvedValue({ data: groups });
+    const { GroupService } = await import('../../src/renderer/services/group-service');
 
-    const createdGroup = await GroupService.createGroup({
-      name: ' Doces finos ',
-      description: '  Linha premium para eventos.  ',
-    });
+    await expect(GroupService.getAllGroups()).resolves.toEqual(groups);
+    expect(groupHttpClientMocks.getMock).toHaveBeenCalledWith('/');
+  });
 
-    expect(createdGroup.name).toBe('Doces finos');
-    expect(createdGroup.description).toBe('Linha premium para eventos.');
-
-    const updatedGroups = await GroupService.getAllGroups();
-
-    expect(updatedGroups[0]).toEqual({
-      id: createdGroup.id,
+  it('creates, updates and deletes groups through the API client', async () => {
+    const payload = {
       name: 'Doces finos',
       description: 'Linha premium para eventos.',
-    });
-  });
-
-  it('updates an existing group and normalizes the optional description', async () => {
+    };
+    const response = { data: { id: 'group-3', ...payload } };
+    groupHttpClientMocks.postMock.mockResolvedValue(response);
+    groupHttpClientMocks.putMock.mockResolvedValue(response);
+    groupHttpClientMocks.deleteMock.mockResolvedValue(undefined);
     const { GroupService } = await import('../../src/renderer/services/group-service');
 
-    const updatedGroup = await GroupService.updateGroup('group-1', {
-      name: ' Brigadeiros gourmet ',
-      description: '   ',
-    });
+    await expect(GroupService.createGroup(payload)).resolves.toEqual(response.data);
+    await expect(GroupService.updateGroup('group-3', payload)).resolves.toEqual(response.data);
+    await expect(GroupService.deleteGroup('group-3')).resolves.toBeUndefined();
 
-    expect(updatedGroup).toEqual({
-      id: 'group-1',
-      name: 'Brigadeiros gourmet',
-      description: undefined,
-    });
-
-    await expect(GroupService.getAllGroups()).resolves.toEqual([
-      {
-        id: 'group-1',
-        name: 'Brigadeiros gourmet',
-        description: undefined,
-      },
-      {
-        id: 'group-2',
-        name: 'Bolos',
-        description: 'Massas, recheios e coberturas para bolos.',
-      },
-    ]);
-  });
-
-  it('deletes an existing group', async () => {
-    const { GroupService } = await import('../../src/renderer/services/group-service');
-
-    await GroupService.deleteGroup('group-2');
-
-    await expect(GroupService.getAllGroups()).resolves.toEqual([
-      {
-        id: 'group-1',
-        name: 'Brigadeiros',
-        description: 'Receitas de brigadeiro e doces similares.',
-      },
-    ]);
-  });
-
-  it('throws when updating or deleting a missing group', async () => {
-    const { GroupService } = await import('../../src/renderer/services/group-service');
-
-    await expect(
-      GroupService.updateGroup('group-404', {
-        name: 'Inexistente',
-      }),
-    ).rejects.toThrow('Grupo group-404 não foi encontrado.');
-
-    await expect(GroupService.deleteGroup('group-404')).rejects.toThrow(
-      'Grupo group-404 não foi encontrado.',
-    );
+    expect(groupHttpClientMocks.postMock).toHaveBeenCalledWith('/', payload);
+    expect(groupHttpClientMocks.putMock).toHaveBeenCalledWith('/group-3', payload);
+    expect(groupHttpClientMocks.deleteMock).toHaveBeenCalledWith('/group-3');
   });
 });

@@ -1,60 +1,27 @@
 import type { ICreateProduct, IReadProduct } from '../../shared/products';
-import { UnitOfMeasure } from '../../shared/unit-of-measure';
-
-let productsStore: IReadProduct[] = [
-  {
-    id: 'product-1',
-    name: 'Chocolate em po',
-    price: 18.9,
-    quantity: 1,
-    unitOfMeasure: UnitOfMeasure.kg,
-    unitPrice: 18.9,
-  },
-  {
-    id: 'product-2',
-    name: 'Leite condensado',
-    price: 7.5,
-    quantity: 395,
-    unitOfMeasure: UnitOfMeasure.g,
-    unitPrice: 7.5 / 395,
-  },
-];
-
-const cloneProduct = (product: IReadProduct): IReadProduct => ({ ...product });
-
-const buildProduct = (payload: ICreateProduct, id: string): IReadProduct => ({
-  id,
-  name: payload.name,
-  price: payload.price,
-  quantity: payload.quantity,
-  unitOfMeasure: payload.unitOfMeasure,
-  unitPrice: payload.price / payload.quantity,
-});
+import { getProductHttpClient } from './http/domain-clients';
 
 export const ProductService = {
   async getAllProducts(): Promise<IReadProduct[]> {
-    return productsStore.map(cloneProduct);
+    const response = await getProductHttpClient().get<IReadProduct[]>('/');
+    return response.data;
   },
 
   async getAllIngredientsDto(): Promise<IReadProduct[]> {
-    return productsStore.map(cloneProduct);
+    return this.getAllProducts();
   },
 
   async createProduct(payload: ICreateProduct): Promise<IReadProduct> {
-    const product = buildProduct(payload, `product-${Date.now()}`);
-    productsStore = [...productsStore, product];
-    return cloneProduct(product);
+    const response = await getProductHttpClient().post<IReadProduct>('/', payload);
+    return response.data;
   },
 
   async updateProduct(id: string, payload: ICreateProduct): Promise<IReadProduct> {
-    const product = buildProduct(payload, id);
-    productsStore = productsStore.map((currentProduct) =>
-      currentProduct.id === id ? product : currentProduct,
-    );
-    return cloneProduct(product);
+    const response = await getProductHttpClient().put<IReadProduct>(`/${id}`, payload);
+    return response.data;
   },
 
   async deleteProduct(id: string): Promise<void> {
-    productsStore = productsStore.filter((product) => product.id !== id);
+    await getProductHttpClient().delete(`/${id}`);
   },
 };

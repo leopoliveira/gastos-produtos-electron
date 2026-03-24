@@ -3,11 +3,138 @@ import { render, screen, within } from '@testing-library/react';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
+import { UnitOfMeasure } from '../../src/shared/unit-of-measure';
+
 vi.mock('sonner', () => ({
   Toaster: () => <div data-testid="global-toaster" />,
   toast: {
     success: vi.fn(),
     error: vi.fn(),
+  },
+}));
+
+vi.mock('../../src/renderer/services/product-service', () => ({
+  ProductService: {
+    getAllProducts: vi.fn().mockResolvedValue([
+      {
+        id: 'product-1',
+        name: 'Chocolate em po',
+        price: 18.9,
+        quantity: 1,
+        unitOfMeasure: UnitOfMeasure.kg,
+        unitPrice: 18.9,
+      },
+    ]),
+    getAllIngredientsDto: vi.fn().mockResolvedValue([
+      {
+        id: 'product-1',
+        name: 'Chocolate em po',
+        price: 18.9,
+        quantity: 1,
+        unitOfMeasure: UnitOfMeasure.kg,
+        unitPrice: 18.9,
+      },
+    ]),
+    createProduct: vi.fn(),
+    updateProduct: vi.fn(),
+    deleteProduct: vi.fn(),
+  },
+}));
+
+vi.mock('../../src/renderer/services/packing-service', () => ({
+  PackingService: {
+    getAllPackings: vi.fn().mockResolvedValue([
+      {
+        id: 'packing-1',
+        name: 'Caixa para brigadeiro',
+        description: 'Caixa premium com tampa transparente',
+        price: 24.9,
+        quantity: 50,
+        unitOfMeasure: UnitOfMeasure.box,
+        packingUnitPrice: 24.9 / 50,
+      },
+    ]),
+    getAllPackingsDto: vi.fn().mockResolvedValue([
+      {
+        id: 'packing-1',
+        name: 'Caixa para brigadeiro',
+        description: 'Caixa premium com tampa transparente',
+        price: 24.9,
+        quantity: 50,
+        unitOfMeasure: UnitOfMeasure.box,
+        packingUnitPrice: 24.9 / 50,
+      },
+    ]),
+    createPacking: vi.fn(),
+    updatePacking: vi.fn(),
+    deletePacking: vi.fn(),
+  },
+}));
+
+vi.mock('../../src/renderer/services/group-service', () => ({
+  GroupService: {
+    getAllGroups: vi.fn().mockResolvedValue([
+      {
+        id: 'group-1',
+        name: 'Brigadeiros',
+        description: 'Receitas de brigadeiro e doces similares.',
+      },
+    ]),
+    createGroup: vi.fn(),
+    updateGroup: vi.fn(),
+    deleteGroup: vi.fn(),
+  },
+}));
+
+vi.mock('../../src/renderer/services/recipe-service', () => ({
+  RecipeService: {
+    getAllRecipes: vi.fn().mockResolvedValue([
+      {
+        id: 'recipe-1',
+        name: 'Brigadeiro Tradicional',
+        description: 'Receita de brigadeiro',
+        quantity: 20,
+        sellingValue: 3,
+        groupId: 'group-1',
+        groupName: 'Brigadeiros',
+        ingredients: [
+          {
+            ingredientId: 'product-1',
+            name: 'Chocolate em po',
+            quantity: 0.5,
+            unitOfMeasure: UnitOfMeasure.kg,
+            unitPrice: 18.9,
+            totalCost: 9.45,
+          },
+        ],
+        packings: [],
+        totalCost: 24,
+      },
+    ]),
+    getRecipeById: vi.fn().mockResolvedValue({
+      id: 'recipe-1',
+      name: 'Brigadeiro Tradicional',
+      description: 'Receita de brigadeiro',
+      quantity: 20,
+      sellingValue: 3,
+      groupId: 'group-1',
+      groupName: 'Brigadeiros',
+      ingredients: [
+        {
+          ingredientId: 'product-1',
+          name: 'Chocolate em po',
+          quantity: 0.5,
+          unitOfMeasure: UnitOfMeasure.kg,
+          unitPrice: 18.9,
+          totalCost: 9.45,
+        },
+      ],
+      packings: [],
+      totalCost: 24,
+    }),
+    createRecipe: vi.fn(),
+    updateRecipe: vi.fn(),
+    deleteRecipe: vi.fn(),
   },
 }));
 

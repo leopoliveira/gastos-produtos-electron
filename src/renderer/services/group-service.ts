@@ -1,67 +1,23 @@
 import type { ICreateGroup, IReadGroup, IUpdateGroup } from '../../shared/groups';
-
-let groupsStore: IReadGroup[] = [
-  {
-    id: 'group-1',
-    name: 'Brigadeiros',
-    description: 'Receitas de brigadeiro e doces similares.',
-  },
-  {
-    id: 'group-2',
-    name: 'Bolos',
-    description: 'Massas, recheios e coberturas para bolos.',
-  },
-];
-
-const cloneGroup = (group: IReadGroup): IReadGroup => ({ ...group });
-const normalizeOptionalText = (value?: string): string | undefined => {
-  const normalizedValue = value?.trim();
-  return normalizedValue ? normalizedValue : undefined;
-};
-
-const getGroupIndexById = (id: string): number =>
-  groupsStore.findIndex((group) => group.id === id);
-
-const buildMissingGroupError = (id: string): Error => new Error(`Grupo ${id} não foi encontrado.`);
+import { getGroupHttpClient } from './http/domain-clients';
 
 export const GroupService = {
   async getAllGroups(): Promise<IReadGroup[]> {
-    return groupsStore.map(cloneGroup);
+    const response = await getGroupHttpClient().get<IReadGroup[]>('/');
+    return response.data;
   },
 
   async createGroup(payload: ICreateGroup): Promise<IReadGroup> {
-    const group = {
-      id: `group-${Date.now()}`,
-      name: payload.name.trim(),
-      description: normalizeOptionalText(payload.description),
-    };
-
-    groupsStore = [group, ...groupsStore];
-    return cloneGroup(group);
+    const response = await getGroupHttpClient().post<IReadGroup>('/', payload);
+    return response.data;
   },
 
   async updateGroup(id: string, payload: IUpdateGroup): Promise<IReadGroup> {
-    const groupIndex = getGroupIndexById(id);
-    if (groupIndex < 0) {
-      throw buildMissingGroupError(id);
-    }
-
-    const nextGroup: IReadGroup = {
-      id,
-      name: payload.name.trim(),
-      description: normalizeOptionalText(payload.description),
-    };
-
-    groupsStore = groupsStore.map((group, index) => (index === groupIndex ? nextGroup : group));
-    return cloneGroup(nextGroup);
+    const response = await getGroupHttpClient().put<IReadGroup>(`/${id}`, payload);
+    return response.data;
   },
 
   async deleteGroup(id: string): Promise<void> {
-    const groupIndex = getGroupIndexById(id);
-    if (groupIndex < 0) {
-      throw buildMissingGroupError(id);
-    }
-
-    groupsStore = groupsStore.filter((group) => group.id !== id);
+    await getGroupHttpClient().delete(`/${id}`);
   },
 };

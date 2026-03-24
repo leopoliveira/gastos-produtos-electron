@@ -1,161 +1,170 @@
 import type {
   ICreateRecipe,
+  IngredientDto,
   IReadRecipe,
   IRecipeIngredient,
-  IRecipeIngredientInput,
   IRecipePacking,
-  IRecipePackingInput,
+  PackingDto,
 } from '../../shared/recipes';
-import type { IReadGroup } from '../../shared/groups';
 import type { IReadPacking } from '../../shared/packings';
 import type { IReadProduct } from '../../shared/products';
 import { UnitOfMeasure } from '../../shared/unit-of-measure';
-import { GroupService } from './group-service';
+import type { HttpClientError } from './http/client';
+import { getRecipeHttpClient } from './http/domain-clients';
 import { PackingService } from './packing-service';
 import { ProductService } from './product-service';
 
-type StoredRecipe = Omit<ICreateRecipe, 'ingredients' | 'packings'> & {
-  id: string;
-  ingredients: IRecipeIngredientInput[];
-  packings: IRecipePackingInput[];
+type ApiRecipe = Omit<IReadRecipe, 'ingredients' | 'packings'> & {
+  ingredients: IngredientDto[];
+  packings: PackingDto[];
 };
 
-let recipesStore: StoredRecipe[] = [
-  {
-    id: 'recipe-1',
-    name: 'Brigadeiro Tradicional',
-    description: 'Receita base para brigadeiros enrolados.',
-    quantity: 30,
-    sellingValue: 2.5,
-    groupId: 'group-1',
-    ingredients: [
-      {
-        ingredientId: 'product-1',
-        quantity: 0.08,
-      },
-      {
-        ingredientId: 'product-2',
-        quantity: 2,
-      },
-    ],
-    packings: [
-      {
-        packingId: 'packing-1',
-        quantity: 1,
-      },
-    ],
-  },
-];
+type RecipeMutationPayload = Omit<ICreateRecipe, 'ingredients' | 'packings'> & {
+  ingredients: IngredientDto[];
+  packings: PackingDto[];
+};
 
 const buildIngredient = (
-  ingredient: IRecipeIngredientInput,
+  ingredient: IngredientDto,
   products: IReadProduct[],
 ): IRecipeIngredient => {
-  const source = products.find((product) => product.id === ingredient.ingredientId);
+  const source = products.find((product) => product.id === ingredient.productId);
 
   return {
-    ingredientId: ingredient.ingredientId,
+    ingredientId: ingredient.productId,
     quantity: ingredient.quantity,
-    name: source?.name ?? 'Ingrediente removido',
+    name: ingredient.productName,
     unitOfMeasure: source?.unitOfMeasure ?? UnitOfMeasure.un,
-    unitPrice: source?.unitPrice ?? 0,
-    totalCost: (source?.unitPrice ?? 0) * ingredient.quantity,
+    unitPrice: ingredient.ingredientPrice,
+    totalCost: ingredient.ingredientPrice * ingredient.quantity,
   };
 };
 
-const buildPacking = (
-  packing: IRecipePackingInput,
-  packings: IReadPacking[],
-): IRecipePacking => {
+const buildPacking = (packing: PackingDto, packings: IReadPacking[]): IRecipePacking => {
   const source = packings.find((currentPacking) => currentPacking.id === packing.packingId);
 
   return {
     packingId: packing.packingId,
     quantity: packing.quantity,
-    name: source?.name ?? 'Embalagem removida',
+    name: packing.packingName,
     unitOfMeasure: source?.unitOfMeasure ?? UnitOfMeasure.un,
-    unitPrice: source?.packingUnitPrice ?? 0,
-    totalCost: (source?.packingUnitPrice ?? 0) * packing.quantity,
+    unitPrice: packing.packingUnitPrice,
+    totalCost: packing.packingUnitPrice * packing.quantity,
   };
 };
 
-const hydrateRecipe = async (recipe: StoredRecipe): Promise<IReadRecipe> => {
-  const [groups, products, packings] = await Promise.all([
-    GroupService.getAllGroups(),
-    ProductService.getAllIngredientsDto(),
-    PackingService.getAllPackingsDto(),
-  ]);
-  const ingredients = recipe.ingredients.map((ingredient) => buildIngredient(ingredient, products));
-  const recipePackings = recipe.packings.map((packing) => buildPacking(packing, packings));
-  const totalCost =
-    ingredients.reduce((sum, ingredient) => sum + ingredient.totalCost, 0) +
-    recipePackings.reduce((sum, packing) => sum + packing.totalCost, 0);
-  const group = groups.find((currentGroup) => currentGroup.id === recipe.groupId);
-
-  return {
+const hydrateRecipe = (
+  recipe: ApiRecipe,
+  products: IReadProduct[],
+  packings: IReadPacking[],
+): IReadRecipe => ({
     id: recipe.id,
     name: recipe.name,
     description: recipe.description,
     quantity: recipe.quantity,
     sellingValue: recipe.sellingValue,
     groupId: recipe.groupId,
-    groupName: group?.name,
-    ingredients,
-    packings: recipePackings,
-    totalCost,
-  };
-};
+    groupName: recipe.groupName,
+    ingredients: recipe.ingredients.map((ingredient) => buildIngredient(ingredient, products)),
+    packings: recipe.packings.map((packing) => buildPacking(packing, packings)),
+    totalCost: recipe.totalCost,
+  });
+
+const buildMissingReferenceError = (referenceType: 'ingrediente' | 'embalagem', id: string): Error =>
+  new Error(`Não foi possível localizar o ${referenceType} ${id}.`);
+
+const buildRecipePayload = (
+  payload: ICreateRecipe,
+  products: IReadProduct[],
+  packings: IReadPacking[],
+): RecipeMutationPayload => ({
+    name: payload.name,
+    description: payload.description,
+    quantity: payload.quantity,
+    sellingValue: payload.sellingValue,
+    groupId: payload.groupId,
+    ingredients: payload.ingredients.map((ingredient) => {
+      const source = products.find((product) => product.id === ingredient.ingredientId);
+
+      if (!source) {
+        throw buildMissingReferenceError('ingrediente', ingredient.ingredientId);
+      }
+
+      return {
+        productId: ingredient.ingredientId,
+        productName: source.name,
+        quantity: ingredient.quantity,
+        ingredientPrice: source.unitPrice,
+      };
+    }),
+    packings: payload.packings.map((packing) => {
+      const source = packings.find((packingOption) => packingOption.id === packing.packingId);
+
+      if (!source) {
+        throw buildMissingReferenceError('embalagem', packing.packingId);
+      }
+
+      return {
+        packingId: packing.packingId,
+        packingName: source.name,
+        quantity: packing.quantity,
+        packingUnitPrice: source.packingUnitPrice,
+      };
+    }),
+  });
 
 export const RecipeService = {
   async getAllRecipes(): Promise<IReadRecipe[]> {
-    return Promise.all(recipesStore.map((recipe) => hydrateRecipe(recipe)));
+    const [products, packings, response] = await Promise.all([
+      ProductService.getAllProducts(),
+      PackingService.getAllPackings(),
+      getRecipeHttpClient().get<ApiRecipe[]>('/'),
+    ]);
+
+    return response.data.map((recipe) => hydrateRecipe(recipe, products, packings));
   },
 
   async getRecipeById(id: string): Promise<IReadRecipe | undefined> {
-    const recipe = recipesStore.find((currentRecipe) => currentRecipe.id === id);
-    if (!recipe) {
-      return undefined;
-    }
+    try {
+      const [products, packings, response] = await Promise.all([
+        ProductService.getAllProducts(),
+        PackingService.getAllPackings(),
+        getRecipeHttpClient().get<ApiRecipe>(`/${id}`),
+      ]);
 
-    return hydrateRecipe(recipe);
+      return hydrateRecipe(response.data, products, packings);
+    } catch (error) {
+      if ((error as HttpClientError).status === 404) {
+        return undefined;
+      }
+
+      throw error;
+    }
   },
 
   async createRecipe(payload: ICreateRecipe): Promise<IReadRecipe> {
-    const recipe: StoredRecipe = {
-      id: `recipe-${Date.now()}`,
-      name: payload.name.trim(),
-      description: payload.description?.trim(),
-      quantity: payload.quantity,
-      sellingValue: payload.sellingValue,
-      groupId: payload.groupId,
-      ingredients: payload.ingredients.map((ingredient) => ({ ...ingredient })),
-      packings: payload.packings.map((packing) => ({ ...packing })),
-    };
+    const [products, packings] = await Promise.all([
+      ProductService.getAllProducts(),
+      PackingService.getAllPackings(),
+    ]);
+    const recipePayload = buildRecipePayload(payload, products, packings);
+    const response = await getRecipeHttpClient().post<ApiRecipe>('/', recipePayload);
 
-    recipesStore = [...recipesStore, recipe];
-    return hydrateRecipe(recipe);
+    return hydrateRecipe(response.data, products, packings);
   },
 
   async updateRecipe(id: string, payload: ICreateRecipe): Promise<IReadRecipe> {
-    const recipe: StoredRecipe = {
-      id,
-      name: payload.name.trim(),
-      description: payload.description?.trim(),
-      quantity: payload.quantity,
-      sellingValue: payload.sellingValue,
-      groupId: payload.groupId,
-      ingredients: payload.ingredients.map((ingredient) => ({ ...ingredient })),
-      packings: payload.packings.map((packing) => ({ ...packing })),
-    };
+    const [products, packings] = await Promise.all([
+      ProductService.getAllProducts(),
+      PackingService.getAllPackings(),
+    ]);
+    const recipePayload = buildRecipePayload(payload, products, packings);
+    const response = await getRecipeHttpClient().put<ApiRecipe>(`/${id}`, recipePayload);
 
-    recipesStore = recipesStore.map((currentRecipe) =>
-      currentRecipe.id === id ? recipe : currentRecipe,
-    );
-
-    return hydrateRecipe(recipe);
+    return hydrateRecipe(response.data, products, packings);
   },
 
   async deleteRecipe(id: string): Promise<void> {
-    recipesStore = recipesStore.filter((recipe) => recipe.id !== id);
+    await getRecipeHttpClient().delete(`/${id}`);
   },
 };

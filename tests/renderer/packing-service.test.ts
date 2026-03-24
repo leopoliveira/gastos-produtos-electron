@@ -1,65 +1,70 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { UnitOfMeasure } from '../../src/shared/unit-of-measure';
+const packingHttpClientMocks = vi.hoisted(() => ({
+  deleteMock: vi.fn(),
+  getMock: vi.fn(),
+  postMock: vi.fn(),
+  putMock: vi.fn(),
+}));
+
+vi.mock('../../src/renderer/services/http/domain-clients', () => ({
+  getPackingHttpClient: () => ({
+    delete: packingHttpClientMocks.deleteMock,
+    get: packingHttpClientMocks.getMock,
+    post: packingHttpClientMocks.postMock,
+    put: packingHttpClientMocks.putMock,
+  }),
+}));
 
 describe('PackingService', () => {
   beforeEach(() => {
     vi.resetModules();
+    packingHttpClientMocks.deleteMock.mockReset();
+    packingHttpClientMocks.getMock.mockReset();
+    packingHttpClientMocks.postMock.mockReset();
+    packingHttpClientMocks.putMock.mockReset();
   });
 
-  it('returns packings with calculated packing unit price on create and update', async () => {
-    const { PackingService: freshPackingService } = await import(
-      '../../src/renderer/services/packing-service'
-    );
+  it('loads packings and reuses the same list for packing options', async () => {
+    const packings = [
+      {
+        id: 'packing-1',
+        name: 'Envelope para cookie',
+        description: 'Envelope selado',
+        price: 12,
+        quantity: 40,
+        unitOfMeasure: 8,
+        packingUnitPrice: 0.3,
+      },
+    ];
+    packingHttpClientMocks.getMock.mockResolvedValue({ data: packings });
+    const { PackingService } = await import('../../src/renderer/services/packing-service');
 
-    const createdPacking = await freshPackingService.createPacking({
+    await expect(PackingService.getAllPackings()).resolves.toEqual(packings);
+    await expect(PackingService.getAllPackingsDto()).resolves.toEqual(packings);
+    expect(packingHttpClientMocks.getMock).toHaveBeenCalledWith('/');
+  });
+
+  it('creates, updates and deletes packings through the API client', async () => {
+    const payload = {
       name: 'Envelope para cookie',
       description: 'Envelope selado',
       price: 12,
       quantity: 40,
-      unitOfMeasure: UnitOfMeasure.package,
-    });
+      unitOfMeasure: 8,
+    };
+    const response = { data: { id: 'packing-1', ...payload, packingUnitPrice: 0.3 } };
+    packingHttpClientMocks.postMock.mockResolvedValue(response);
+    packingHttpClientMocks.putMock.mockResolvedValue(response);
+    packingHttpClientMocks.deleteMock.mockResolvedValue(undefined);
+    const { PackingService } = await import('../../src/renderer/services/packing-service');
 
-    expect(createdPacking.packingUnitPrice).toBe(0.3);
+    await expect(PackingService.createPacking(payload)).resolves.toEqual(response.data);
+    await expect(PackingService.updatePacking('packing-1', payload)).resolves.toEqual(response.data);
+    await expect(PackingService.deletePacking('packing-1')).resolves.toBeUndefined();
 
-    const updatedPacking = await freshPackingService.updatePacking(createdPacking.id, {
-      name: 'Envelope para cookie',
-      description: 'Envelope selado fosco',
-      price: 15,
-      quantity: 50,
-      unitOfMeasure: UnitOfMeasure.package,
-    });
-
-    expect(updatedPacking.packingUnitPrice).toBe(0.3);
-
-    const packings = await freshPackingService.getAllPackings();
-
-    expect(packings).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          id: createdPacking.id,
-          description: 'Envelope selado fosco',
-          packingUnitPrice: 0.3,
-        }),
-      ]),
-    );
-  });
-
-  it('removes a packing by id', async () => {
-    const { PackingService: freshPackingService } = await import(
-      '../../src/renderer/services/packing-service'
-    );
-
-    const initialPackings = await freshPackingService.getAllPackings();
-    const targetPacking = initialPackings[0];
-
-    await freshPackingService.deletePacking(targetPacking.id);
-
-    const remainingPackings = await freshPackingService.getAllPackings();
-
-    expect(remainingPackings).toHaveLength(initialPackings.length - 1);
-    expect(remainingPackings).not.toEqual(
-      expect.arrayContaining([expect.objectContaining({ id: targetPacking.id })]),
-    );
+    expect(packingHttpClientMocks.postMock).toHaveBeenCalledWith('/', payload);
+    expect(packingHttpClientMocks.putMock).toHaveBeenCalledWith('/packing-1', payload);
+    expect(packingHttpClientMocks.deleteMock).toHaveBeenCalledWith('/packing-1');
   });
 });

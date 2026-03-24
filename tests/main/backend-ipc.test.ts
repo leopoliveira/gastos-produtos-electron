@@ -2,8 +2,9 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { ipcMainHandleMock, servicesMock } = vi.hoisted(() => ({
+const { ipcMainHandleMock, mainLogErrorMock, servicesMock } = vi.hoisted(() => ({
   ipcMainHandleMock: vi.fn(),
+  mainLogErrorMock: vi.fn(),
   servicesMock: {
     products: {
       getAll: vi.fn(),
@@ -46,10 +47,18 @@ vi.mock('../../src/main/backend/application/backend-services', () => ({
   getBackendServices: () => servicesMock,
 }));
 
+vi.mock('../../src/main/logging/app-logger', () => ({
+  configureMainProcessLogging: vi.fn(),
+  mainLog: {
+    error: mainLogErrorMock,
+  },
+}));
+
 describe('registerBackendIpcHandlers', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    mainLogErrorMock.mockReset();
     Object.assign(globalThis as Record<string, unknown>, {
       MAIN_WINDOW_VITE_DEV_SERVER_URL: 'http://localhost:5173',
     });
@@ -181,5 +190,34 @@ describe('registerBackendIpcHandlers', () => {
         serialized.problem.title === 'Not Found' &&
         serialized.problem.detail === 'Grupo não encontrado.';
     });
+  });
+
+  it('logs unexpected backend errors in the main process before serializing internal_error', async () => {
+    const { ipcChannels, parseIpcError } = await import('../../src/shared/ipc');
+    const { registerBackendIpcHandlers } = await import('../../src/main/ipc/backend-ipc');
+    const getRegisteredHandler = (channel: string) =>
+      ipcMainHandleMock.mock.calls.find(([registeredChannel]) => registeredChannel === channel)?.[1];
+
+    registerBackendIpcHandlers();
+
+    const groupGetByIdHandler = getRegisteredHandler(ipcChannels.groups.getById);
+    const boom = new Error('database exploded');
+    servicesMock.groups.getById.mockRejectedValue(boom);
+
+    await expect(
+      groupGetByIdHandler?.(
+        {
+          senderFrame: {
+            url: 'http://localhost:5173/configuration',
+          },
+        },
+        { id: 'any' },
+      ),
+    ).rejects.toSatisfy((error: Error) => parseIpcError(error.message)?.problem.code === 'internal_error');
+
+    expect(mainLogErrorMock).toHaveBeenCalledWith(
+      '[ipc] Unhandled backend error (serialized for renderer as internal_error).',
+      boom,
+    );
   });
 });

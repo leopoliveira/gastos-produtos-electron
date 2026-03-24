@@ -13,6 +13,7 @@ export const squirrelNugetPackageId = 'gastosprodutos';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    executableName: 'gastos-produtos',
   },
   rebuildConfig: {},
   makers: [

@@ -26,6 +26,9 @@ const invoke = async <TResult>(channel: string, payload?: unknown): Promise<TRes
 };
 
 const appApi: AppApi = {
+  logging: {
+    write: (payload) => invoke(ipcChannels.logging.write, payload),
+  },
   products: {
     list: () => invoke(ipcChannels.products.list),
     getById: (id) => invoke(ipcChannels.products.getById, { id }),

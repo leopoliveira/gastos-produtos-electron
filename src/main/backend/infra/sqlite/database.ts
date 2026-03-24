@@ -4,6 +4,7 @@ import path from 'node:path';
 import { open, type Database } from 'sqlite';
 import sqlite3 from 'sqlite3';
 
+import { mainLog } from '../../../logging/app-logger';
 import { sqliteMigrations } from './migrations';
 
 const MIGRATIONS_TABLE_NAME = '__AppMigrations';
@@ -31,6 +32,8 @@ const openDatabase = async (filePath: string): Promise<Database> => {
 
   await database.exec('PRAGMA foreign_keys = ON;');
   await database.exec('PRAGMA journal_mode = WAL;');
+
+  mainLog.info('[backend:sqlite] Database opened', { path: filePath });
 
   return database;
 };
@@ -72,8 +75,10 @@ const applyPendingMigrations = async (database: Database): Promise<void> => {
         new Date().toISOString(),
       );
       await database.exec('COMMIT;');
+      mainLog.info('[backend:sqlite] Applied migration', { id: migration.id });
     } catch (error) {
       await database.exec('ROLLBACK;');
+      mainLog.error('[backend:sqlite] Migration failed', { id: migration.id, error });
       throw error;
     }
   }
@@ -131,4 +136,5 @@ export const closeDatabase = async (): Promise<void> => {
   cachedDatabasePath = undefined;
 
   await database.close();
+  mainLog.info('[backend:sqlite] Database connection closed');
 };

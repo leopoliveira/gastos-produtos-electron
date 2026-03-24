@@ -38,6 +38,7 @@ Current repo facts that matter:
 - The current preload in [`index.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/preload/index.ts) exposes a single `window.appApi` bridge backed by typed IPC channels in [`src/shared/ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/shared/ipc.ts)
 - The current backend persistence is local SQLite, initialized in [`database.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/backend/infra/sqlite/database.ts), with versioned migrations in [`migrations.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/backend/infra/sqlite/migrations.ts)
 - The current renderer service layer calls the preload bridge via helpers such as [`electron-api.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/services/electron-api.ts) and service modules under [`src/renderer/services/`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/services/)
+- Main-process logging is configured in [`app-logger.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/logging/app-logger.ts); renderer-side log forwarding uses [`app-log.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/services/app-log.ts) and [`logging-ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/logging-ipc.ts). See [Logging Pattern](#logging-pattern).
 
 When agents add features, they must move the project toward a stricter Electron posture, not away from it.
 
@@ -319,6 +320,52 @@ if (!app.isPackaged) {
 - When packaging behavior changes, evaluate impact on security and startup time.
 - If a future feature requires a weaker setting, document the reason directly in the config change.
 
+## Logging Pattern
+
+Observability uses [`electron-log`](https://github.com/megahertz/electron-log) in the **main process** only. The renderer never loads `electron-log`; it forwards structured entries through a narrow IPC channel so file transport and levels stay centralized.
+
+### Main process
+
+- Call [`configureMainProcessLogging()`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/logging/app-logger.ts) once at main entry (before `app.whenReady()`), as in [`index.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/index.ts).
+- Import the shared instance as `mainLog` from [`app-logger.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/logging/app-logger.ts) and use `mainLog.debug`, `info`, `warn`, and `error`.
+- Default configuration: file transport at **info**; console at **warn** when packaged and **debug** when not. In packaged builds, file logs are written under a `logs/` directory next to the app executable (see `applyInstallAdjacentFileTransport` in `app-logger.ts`).
+- Prefer **structured context** as a trailing object (e.g. `{ productId, name }`) instead of long interpolated strings, so logs stay grep-friendly and safe to parse.
+
+### Message prefixes
+
+Use a stable bracket prefix on the first argument so operators can filter:
+
+| Prefix | Use |
+| --- | --- |
+| `[backend]` | Process-wide backend wiring (e.g. services cache initialized). |
+| `[backend:sqlite]` | Database open/close, migration applied or failed. |
+| `[backend:products]`, `[backend:packings]`, `[backend:groups]`, `[backend:recipes]` | Domain service mutations and important business outcomes (e.g. soft-delete, blocked delete). |
+| `[ipc]` | Main IPC handler errors or diagnostics (see [`backend-ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/backend-ipc.ts)). |
+| `[renderer]` | Lines forwarded from the renderer through [`logging-ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/logging-ipc.ts). |
+
+When adding new areas, extend the `backend:<area>` pattern rather than inventing unrelated tags.
+
+### Backend (`src/main/backend/`)
+
+- Log **mutations** (create, update, soft-delete) and **infra milestones** (DB open, migrations, close) at `info` unless the event is exceptional.
+- Log **expected business rule blocks** (e.g. delete forbidden because of references) at `warn` before throwing domain errors.
+- Log **migration failures** and similar hard failures at `error` with `{ id, error }` (or equivalent), then rethrow.
+- Avoid `info` on hot **read** paths (`getAll`, `getById`) to limit noise and I/O.
+
+### Renderer
+
+- Use [`app-log.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/services/app-log.ts) (`appLog.debug`, `info`, `warn`, `error`). It invokes preload → IPC; failures are swallowed so UI flows are not broken.
+- Do not log secrets, tokens, or large payloads. The main handler validates and caps message length, context key count, and string sizes (see [`logging-ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/logging-ipc.ts)).
+
+### Security and IPC
+
+- Renderer log payloads are **untrusted**; keep [`assertTrustedSender`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/logging-ipc.ts) aligned with other IPC handlers.
+- Treat logging IPC like any other channel: no passthrough of raw objects beyond the validated `RendererLogPayload` shape in [`ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/shared/ipc.ts).
+
+### Tests
+
+- Modules that import `mainLog` pull in Electron/electron-log. Vitest runs that touch them may emit console output from real logging; when assertions depend on log calls, mock [`app-logger`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/logging/app-logger.ts) the same way as in [`backend-ipc.test.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/tests/main/backend-ipc.test.ts).
+
 ## Delivery Checklist
 
 Before finishing a task, agents must verify:
@@ -336,6 +383,7 @@ Before finishing a task, agents must verify:
 - startup work is still proportional to what the first screen needs
 - large dependencies were justified
 - documentation or comments were updated when the security/performance model changed
+- logging changes follow the [Logging Pattern](#logging-pattern): main uses `mainLog` and prefixes; renderer uses `appLog` + IPC; no secrets or unbounded payloads
 
 ## Red Flags That Require Extra Scrutiny
 

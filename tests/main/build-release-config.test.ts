@@ -28,6 +28,7 @@ describe('build and release configuration', () => {
   it('keeps forge packaging and release makers configured', () => {
     expect(forgeConfig.packagerConfig).toMatchObject({
       asar: true,
+      executableName: 'gastos-produtos',
     });
 
     expect(

@@ -14,6 +14,7 @@ import type { AddProductRequest, UpdateProductDto } from '../../shared/products'
 import type { AddRecipeRequest, IngredientDto, PackingDto, UpdateRecipeDto } from '../../shared/recipes';
 import { getBackendServices } from '../backend/application/backend-services';
 import { InvalidOperationError, NotFoundError } from '../backend/domain/errors';
+import { mainLog } from '../logging/app-logger';
 
 let handlersRegistered = false;
 
@@ -169,6 +170,11 @@ const invokeBackendService = async <TResult>(operation: () => Promise<TResult> |
   try {
     return await operation();
   } catch (error) {
+    if (error instanceof NotFoundError || error instanceof InvalidOperationError) {
+      throw new Error(serializeIpcError(toSerializedIpcError(error)));
+    }
+
+    mainLog.error('[ipc] Unhandled backend error (serialized for renderer as internal_error).', error);
     throw new Error(serializeIpcError(toSerializedIpcError(error)));
   }
 };

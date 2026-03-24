@@ -42,6 +42,7 @@ describe('preload appApi bridge', () => {
       ingredients: [],
       packings: [],
     });
+    await appApi.logging.write({ level: 'info', message: 'renderer ready' });
 
     expect(invokeMock).toHaveBeenNthCalledWith(1, ipcChannels.products.list);
     expect(invokeMock).toHaveBeenNthCalledWith(2, ipcChannels.groups.delete, { id: 'group-1' });
@@ -54,6 +55,10 @@ describe('preload appApi bridge', () => {
         ingredients: [],
         packings: [],
       },
+    });
+    expect(invokeMock).toHaveBeenNthCalledWith(4, ipcChannels.logging.write, {
+      level: 'info',
+      message: 'renderer ready',
     });
   });
 

@@ -3,7 +3,11 @@ import started from 'electron-squirrel-startup';
 
 import { initializeDatabase } from './backend/infra/sqlite/database';
 import { registerBackendIpcHandlers } from './ipc/backend-ipc';
+import { registerLoggingIpcHandlers } from './ipc/logging-ipc';
+import { configureMainProcessLogging, mainLog } from './logging/app-logger';
 import { createMainWindow } from './windows/main-window';
+
+configureMainProcessLogging();
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -13,11 +17,12 @@ if (started) {
 void app.whenReady()
   .then(async () => {
     await initializeDatabase();
+    registerLoggingIpcHandlers();
     registerBackendIpcHandlers();
     createMainWindow();
   })
   .catch((error) => {
-    console.error('Failed to initialize application database.', error);
+    mainLog.error('Failed to initialize application database.', error);
     app.quit();
   });
 

@@ -3,6 +3,7 @@ import { PackingService } from './packing-service';
 import { ProductService } from './product-service';
 import { RecipeService } from './recipe-service';
 import { createDatabaseProvider } from '../infra/sqlite/database';
+import { mainLog } from '../../logging/app-logger';
 
 export interface BackendServices {
   groups: GroupService;
@@ -27,6 +28,7 @@ export const createBackendServices = (): BackendServices => {
 export const getBackendServices = (): BackendServices => {
   if (!cachedBackendServices) {
     cachedBackendServices = createBackendServices();
+    mainLog.info('[backend] Application services initialized');
   }
 
   return cachedBackendServices;

@@ -8,6 +8,7 @@ import type {
 import { InvalidOperationError, NotFoundError } from '../domain/errors';
 import { createGroupRecord } from '../domain/entities';
 import type { DatabaseProvider } from '../infra/sqlite/database';
+import { mainLog } from '../../logging/app-logger';
 
 const GROUP_NOT_FOUND_MESSAGE = 'Grupo não encontrado.';
 const GROUP_NAME_REQUIRED_MESSAGE = 'Nome do grupo é obrigatório.';
@@ -78,6 +79,8 @@ export class GroupService {
       group.isDeleted ? 1 : 0,
     );
 
+    mainLog.info('[backend:groups] Created group', { groupId: group.id, name: group.name });
+
     return { id: group.id };
   }
 
@@ -106,6 +109,8 @@ export class GroupService {
       new Date().toISOString(),
       id,
     );
+
+    mainLog.info('[backend:groups] Updated group', { groupId: id });
   }
 
   async delete(id: string): Promise<void> {
@@ -125,6 +130,7 @@ export class GroupService {
     );
 
     if (activeRecipe) {
+      mainLog.warn('[backend:groups] Delete blocked: group referenced by recipes', { groupId: id });
       throw new InvalidOperationError(GROUP_IN_USE_MESSAGE);
     }
 
@@ -134,5 +140,7 @@ export class GroupService {
       WHERE "Id" = ?;`,
       id,
     );
+
+    mainLog.info('[backend:groups] Soft-deleted group', { groupId: id });
   }
 }

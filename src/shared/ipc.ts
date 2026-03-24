@@ -23,7 +23,18 @@ import type {
   UpdateRecipeDto,
 } from './recipes';
 
+export type RendererLogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+export interface RendererLogPayload {
+  context?: Record<string, string | number | boolean | null>;
+  level: RendererLogLevel;
+  message: string;
+}
+
 export const ipcChannels = {
+  logging: {
+    write: 'logging:write',
+  },
   groups: {
     create: 'groups:create',
     delete: 'groups:delete',
@@ -129,8 +140,13 @@ export interface RecipeApi {
   update(id: string, payload: UpdateRecipeDto): Promise<void>;
 }
 
+export interface LoggingApi {
+  write(payload: RendererLogPayload): Promise<void>;
+}
+
 export interface AppApi {
   groups: GroupApi;
+  logging: LoggingApi;
   packings: PackingApi;
   products: ProductApi;
   recipes: RecipeApi;

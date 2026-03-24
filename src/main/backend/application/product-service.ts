@@ -8,6 +8,7 @@ import type {
 import { NotFoundError } from '../domain/errors';
 import { createProductRecord, type ProductRecord } from '../domain/entities';
 import type { DatabaseProvider } from '../infra/sqlite/database';
+import { mainLog } from '../../logging/app-logger';
 
 const toReadProduct = (product: ProductRecord): GetProductResponse => ({
   id: product.id,
@@ -90,6 +91,8 @@ export class ProductService {
       product.isDeleted ? 1 : 0,
     );
 
+    mainLog.info('[backend:products] Created product', { productId: product.id, name: product.name });
+
     return { productId: product.id };
   }
 
@@ -120,6 +123,8 @@ export class ProductService {
       new Date().toISOString(),
       id,
     );
+
+    mainLog.info('[backend:products] Updated product', { productId: id });
   }
 
   async delete(id: string): Promise<void> {
@@ -142,5 +147,7 @@ export class ProductService {
       new Date().toISOString(),
       id,
     );
+
+    mainLog.info('[backend:products] Soft-deleted product', { productId: id });
   }
 }

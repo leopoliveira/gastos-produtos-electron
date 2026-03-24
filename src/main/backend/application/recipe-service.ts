@@ -22,6 +22,7 @@ import {
 } from '../domain/entities';
 import type { DatabaseProvider } from '../infra/sqlite/database';
 import { runInTransaction } from '../infra/sqlite/database';
+import { mainLog } from '../../logging/app-logger';
 
 const RECIPE_NOT_FOUND_MESSAGE = 'Recipe not found.';
 const RECIPE_NOT_FOUND_DELETE_MESSAGE = 'Recipe not found. Nothing will be deleted.';
@@ -263,6 +264,15 @@ export class RecipeService {
       }
     });
 
+    mainLog.info('[backend:recipes] Created recipe', {
+      recipeId: recipe.id,
+      name: recipe.name,
+      groupId: recipe.groupId,
+      ingredientCount: ingredients.length,
+      packingCount: packings.length,
+      totalCost: recipe.totalCost,
+    });
+
     return { recipeId: recipe.id };
   }
 
@@ -340,6 +350,13 @@ export class RecipeService {
         );
       }
     });
+
+    mainLog.info('[backend:recipes] Updated recipe', {
+      recipeId: id,
+      ingredientCount: ingredients.length,
+      packingCount: packings.length,
+      totalCost,
+    });
   }
 
   async delete(id: string): Promise<void> {
@@ -362,6 +379,8 @@ export class RecipeService {
       new Date().toISOString(),
       id,
     );
+
+    mainLog.info('[backend:recipes] Soft-deleted recipe', { recipeId: id });
   }
 
   private async hydrateRecipes(recipeRows: RecipeRow[]): Promise<GetRecipeResponse[]> {

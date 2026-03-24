@@ -8,6 +8,7 @@ import type {
 import { NotFoundError } from '../domain/errors';
 import { createPackingRecord, type PackingRecord } from '../domain/entities';
 import type { DatabaseProvider } from '../infra/sqlite/database';
+import { mainLog } from '../../logging/app-logger';
 
 const toReadPacking = (packing: PackingRecord): GetPackingResponse => ({
   id: packing.id,
@@ -95,6 +96,8 @@ export class PackingService {
       packing.isDeleted ? 1 : 0,
     );
 
+    mainLog.info('[backend:packings] Created packing', { packingId: packing.id, name: packing.name });
+
     return { packingId: packing.id };
   }
 
@@ -127,6 +130,8 @@ export class PackingService {
       new Date().toISOString(),
       id,
     );
+
+    mainLog.info('[backend:packings] Updated packing', { packingId: id });
   }
 
   async delete(id: string): Promise<void> {
@@ -149,5 +154,7 @@ export class PackingService {
       new Date().toISOString(),
       id,
     );
+
+    mainLog.info('[backend:packings] Soft-deleted packing', { packingId: id });
   }
 }

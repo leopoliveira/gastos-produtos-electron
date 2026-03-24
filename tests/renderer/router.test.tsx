@@ -5,6 +5,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('sonner', () => ({
   Toaster: () => <div data-testid="global-toaster" />,
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
 }));
 
 import { buildAppRoutes, getBreadcrumbs } from '../../src/renderer/router';
@@ -30,7 +34,7 @@ describe('renderer shell', () => {
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument();
   });
 
-  it('renders breadcrumb and active navigation state on a functional route', () => {
+  it('renders breadcrumb and active navigation state on a functional route', async () => {
     renderRoute('/products');
 
     const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
@@ -39,10 +43,18 @@ describe('renderer shell', () => {
     });
 
     expect(within(breadcrumb).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
-    expect(screen.getByRole('heading', { name: 'Materia Prima', level: 2 })).toBeInTheDocument();
+    expect(within(breadcrumb).getByRole('link', { name: 'Produtos' })).toHaveAttribute(
+      'href',
+      '/products',
+    );
+    expect(screen.getByRole('heading', { name: 'Matéria Prima', level: 2 })).toBeInTheDocument();
     expect(
-      within(primaryNavigation).getByRole('link', { name: 'Materia Prima' }),
+      within(primaryNavigation).getByRole('link', { name: 'Produtos' }),
     ).toHaveClass('sidebar__link--active');
+    expect(screen.getByRole('button', { name: 'Adicionar' })).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: 'Filtrar por Nome' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Preço Unitário' })).toBeInTheDocument();
+    expect(await screen.findByRole('cell', { name: 'Chocolate em po' })).toBeInTheDocument();
   });
 
   it('builds breadcrumbs for dynamic recipe visualization routes', () => {

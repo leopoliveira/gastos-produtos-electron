@@ -9,11 +9,14 @@ import {
   type RouteObject,
 } from 'react-router-dom';
 
+import { ProductsPage } from './pages/products/products-page';
+
 type AppRouteDefinition = {
   path: string;
   label: string;
   description: string;
   showInNavigation?: boolean;
+  element?: React.JSX.Element;
 };
 
 export const appRoutes: AppRouteDefinition[] = [
@@ -25,9 +28,10 @@ export const appRoutes: AppRouteDefinition[] = [
   },
   {
     path: '/products',
-    label: 'Materia Prima',
+    label: 'Produtos',
     description: 'Base da tela de materia-prima. O CRUD sera implementado na proxima etapa.',
     showInNavigation: true,
+    element: <ProductsPage />,
   },
   {
     path: '/packings',
@@ -221,9 +225,7 @@ export const buildAppRoutes = (): RouteObject[] => [
     element: <AppShell />,
     children: appRoutes.map((route) => ({
       path: route.path === '/' ? '/' : route.path,
-      element: (
-        <PlaceholderPage title={route.label} description={route.description} />
-      ),
+      element: route.element ?? <PlaceholderPage title={route.label} description={route.description} />,
     })),
   },
 ];

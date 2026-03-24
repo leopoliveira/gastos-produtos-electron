@@ -7,7 +7,9 @@ import {
   getUnitOfMeasureValues,
   UnitOfMeasure,
 } from '../../../shared/unit-of-measure';
+import { amountFromCurrencyDigitString, currencyDigitStringFromAmount } from '../../../shared/currency-input';
 import { formatCurrency } from '../../../shared/format';
+import { CurrencyMaskedInput } from '../../components/currency-masked-input';
 import { Modal, ModalActions } from '../../components/modal';
 import ui from '../../styles/shared-ui.module.css';
 
@@ -21,7 +23,7 @@ type PackingFormState = {
   name: string;
   description: string;
   quantity: string;
-  price: string;
+  priceDigits: string;
   unitOfMeasure: string;
 };
 
@@ -29,7 +31,7 @@ const toFormState = (packing?: IReadPacking): PackingFormState => ({
   name: packing?.name ?? '',
   description: packing?.description ?? '',
   quantity: packing ? String(packing.quantity) : '',
-  price: packing ? String(packing.price) : '',
+  priceDigits: packing ? currencyDigitStringFromAmount(packing.price) : '',
   unitOfMeasure: String(packing?.unitOfMeasure ?? UnitOfMeasure.un),
 });
 
@@ -41,7 +43,7 @@ export const PackingFormModal = ({
   const [formState, setFormState] = useState<PackingFormState>(toFormState(packing));
 
   const quantity = Number(formState.quantity);
-  const price = Number(formState.price);
+  const price = amountFromCurrencyDigitString(formState.priceDigits);
   const packingUnitPrice = quantity > 0 && price > 0 ? price / quantity : 0;
 
   const handleFieldChange =
@@ -107,13 +109,12 @@ export const PackingFormModal = ({
 
           <label className={ui.field}>
             <span>Preço</span>
-            <input
-              min="0"
+            <CurrencyMaskedInput
+              digits={formState.priceDigits}
               name="price"
-              onChange={handleFieldChange('price')}
-              step="0.01"
-              type="number"
-              value={formState.price}
+              onDigitsChange={(priceDigits) =>
+                setFormState((currentState) => ({ ...currentState, priceDigits }))
+              }
             />
           </label>
         </div>

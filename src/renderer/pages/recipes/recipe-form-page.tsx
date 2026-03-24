@@ -11,12 +11,14 @@ import type {
   IRecipePackingInput,
 } from '../../../shared/recipes';
 import type { IReadProduct } from '../../../shared/products';
+import { amountFromCurrencyDigitString, currencyDigitStringFromAmount } from '../../../shared/currency-input';
 import { formatCurrency } from '../../../shared/format';
 import { getUnitOfMeasureLabel } from '../../../shared/unit-of-measure';
 import { GroupService } from '../../services/group-service';
 import { PackingService } from '../../services/packing-service';
 import { ProductService } from '../../services/product-service';
 import { RecipeService } from '../../services/recipe-service';
+import { CurrencyMaskedInput } from '../../components/currency-masked-input';
 import { GroupFormModal } from './group-form-modal';
 import { IngredientFormModal } from './ingredient-form-modal';
 import { PackingSelectionModal } from './packing-selection-modal';
@@ -27,7 +29,7 @@ type RecipeFormState = {
   name: string;
   description: string;
   quantity: string;
-  sellingValue: string;
+  sellingValueDigits: string;
   groupId: string;
 };
 
@@ -35,7 +37,7 @@ const emptyFormState: RecipeFormState = {
   name: '',
   description: '',
   quantity: '',
-  sellingValue: '',
+  sellingValueDigits: '',
   groupId: '',
 };
 
@@ -168,7 +170,7 @@ export const RecipeFormPage = (): React.JSX.Element => {
             name: recipe.name,
             description: recipe.description ?? '',
             quantity: String(recipe.quantity),
-            sellingValue: String(recipe.sellingValue),
+            sellingValueDigits: currencyDigitStringFromAmount(recipe.sellingValue),
             groupId: resolveGroupId(recipe.groupId, loadedGroups),
           });
           setIngredients(
@@ -210,7 +212,7 @@ export const RecipeFormPage = (): React.JSX.Element => {
   }, [recipeId, reRender]);
 
   const quantity = Number(formState.quantity);
-  const sellingValue = Number(formState.sellingValue);
+  const sellingValue = amountFromCurrencyDigitString(formState.sellingValueDigits);
   const estimatedIngredientCost = ingredients.reduce((sum, ingredient) => {
     const source = ingredientsOptions.find((option) => option.id === ingredient.ingredientId);
     return sum + (source?.unitPrice ?? 0) * ingredient.quantity;
@@ -386,13 +388,12 @@ export const RecipeFormPage = (): React.JSX.Element => {
 
               <label className={ui.field}>
                 <span>Preço de Venda da Unidade</span>
-                <input
-                  min="0"
+                <CurrencyMaskedInput
+                  digits={formState.sellingValueDigits}
                   name="sellingValue"
-                  onChange={handleFieldChange('sellingValue')}
-                  step="0.01"
-                  type="number"
-                  value={formState.sellingValue}
+                  onDigitsChange={(sellingValueDigits) =>
+                    setFormState((currentState) => ({ ...currentState, sellingValueDigits }))
+                  }
                 />
               </label>
             </div>

@@ -195,8 +195,8 @@ describe('RecipeFormPage', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantidade Produzida' }), {
       target: { value: '12' },
     });
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Preço de Venda da Unidade' }), {
-      target: { value: '8' },
+    fireEvent.change(screen.getByRole('textbox', { name: 'Preço de Venda da Unidade' }), {
+      target: { value: '800' },
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Criar Grupo' }));

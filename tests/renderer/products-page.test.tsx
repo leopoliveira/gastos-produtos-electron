@@ -132,8 +132,8 @@ describe('ProductsPage', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantidade' }), {
       target: { value: '1' },
     });
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Preço' }), {
-      target: { value: '4.5' },
+    fireEvent.change(screen.getByRole('textbox', { name: 'Preço' }), {
+      target: { value: '450' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 

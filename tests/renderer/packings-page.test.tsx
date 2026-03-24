@@ -120,8 +120,8 @@ describe('PackingsPage', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantidade' }), {
       target: { value: '20' },
     });
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Preço' }), {
-      target: { value: '8' },
+    fireEvent.change(screen.getByRole('textbox', { name: 'Preço' }), {
+      target: { value: '800' },
     });
     fireEvent.change(screen.getByRole('combobox', { name: 'Unidade de Medida' }), {
       target: { value: String(UnitOfMeasure.roll) },

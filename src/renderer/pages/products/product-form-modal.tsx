@@ -7,7 +7,9 @@ import {
   getUnitOfMeasureValues,
   UnitOfMeasure,
 } from '../../../shared/unit-of-measure';
+import { amountFromCurrencyDigitString, currencyDigitStringFromAmount } from '../../../shared/currency-input';
 import { formatCurrency } from '../../../shared/format';
+import { CurrencyMaskedInput } from '../../components/currency-masked-input';
 import { Modal, ModalActions } from '../../components/modal';
 import ui from '../../styles/shared-ui.module.css';
 
@@ -20,14 +22,14 @@ type ProductFormModalProps = {
 type ProductFormState = {
   name: string;
   quantity: string;
-  price: string;
+  priceDigits: string;
   unitOfMeasure: string;
 };
 
 const toFormState = (product?: IReadProduct): ProductFormState => ({
   name: product?.name ?? '',
   quantity: product ? String(product.quantity) : '',
-  price: product ? String(product.price) : '',
+  priceDigits: product ? currencyDigitStringFromAmount(product.price) : '',
   unitOfMeasure: String(product?.unitOfMeasure ?? UnitOfMeasure.un),
 });
 
@@ -39,7 +41,7 @@ export const ProductFormModal = ({
   const [formState, setFormState] = useState<ProductFormState>(toFormState(product));
 
   const quantity = Number(formState.quantity);
-  const price = Number(formState.price);
+  const price = amountFromCurrencyDigitString(formState.priceDigits);
   const unitPrice = quantity > 0 && price > 0 ? price / quantity : 0;
 
   const handleFieldChange =
@@ -96,13 +98,12 @@ export const ProductFormModal = ({
 
           <label className={ui.field}>
             <span>Preço</span>
-            <input
-              min="0"
+            <CurrencyMaskedInput
+              digits={formState.priceDigits}
               name="price"
-              onChange={handleFieldChange('price')}
-              step="0.01"
-              type="number"
-              value={formState.price}
+              onDigitsChange={(priceDigits) =>
+                setFormState((currentState) => ({ ...currentState, priceDigits }))
+              }
             />
           </label>
         </div>

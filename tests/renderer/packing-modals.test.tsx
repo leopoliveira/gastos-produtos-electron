@@ -21,8 +21,8 @@ describe('packing modals', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantidade' }), {
       target: { value: '10' },
     });
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Preço' }), {
-      target: { value: '25' },
+    fireEvent.change(screen.getByRole('textbox', { name: 'Preço' }), {
+      target: { value: '2500' },
     });
     fireEvent.change(screen.getByRole('combobox', { name: 'Unidade de Medida' }), {
       target: { value: String(UnitOfMeasure.box) },

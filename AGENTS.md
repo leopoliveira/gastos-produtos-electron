@@ -294,6 +294,14 @@ if (!app.isPackaged) {
 - Shared DTOs and IPC payload contracts should be stable enough for both preload and renderer consumers.
 - If a backend contract changes, update the shared type first and then adjust `preload`, `main`, renderer services, and tests consistently.
 
+### Currency input (BRL)
+
+- Product and packing **Preço** and recipe **Preço de Venda da Unidade** use [`CurrencyMaskedInput`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/components/currency-masked-input.tsx) (`type="text"`, `inputMode="numeric"`); do not use `type="number"` for those monetary fields.
+- Pure conversions live in [`currency-input.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/shared/currency-input.ts): `amountFromCurrencyDigitString`, `currencyDigitStringFromAmount`, `formatCurrencyMaskedDisplay`. Display must stay consistent with [`format.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/shared/format.ts) (`formatCurrency`, `pt-BR`).
+- Form state keeps a **digits-only string** meaning centavos typed in order (e.g. `450` → R$ 4,50 → JavaScript number `4.5` for services and IPC). Seed that string when editing with `currencyDigitStringFromAmount(storedAmount)`.
+- Reuse this component and shared helpers for new BRL price fields; avoid ad hoc masks or duplicate parsing in pages.
+- In renderer tests, target these controls with `getByRole('textbox', { name: ... })` (not `spinbutton`). Simulate input with `fireEvent.change` and a digit-only `value`: the string is the centavos sequence (e.g. R$ 25,00 → `2500`, R$ 8,00 → `800`).
+
 ### API And Service Calls
 
 - For this repository, prefer IPC-backed service calls over HTTP for app features.

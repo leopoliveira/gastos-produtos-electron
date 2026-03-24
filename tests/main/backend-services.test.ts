@@ -1,31 +1,34 @@
 // @vitest-environment node
 
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { GroupService } from '../../src/main/backend/application/group-service';
 import { PackingService } from '../../src/main/backend/application/packing-service';
 import { ProductService } from '../../src/main/backend/application/product-service';
 import { RecipeService } from '../../src/main/backend/application/recipe-service';
 import { InvalidOperationError, NotFoundError } from '../../src/main/backend/domain/errors';
-import { AppDataStore } from '../../src/main/backend/infra/app-data-store';
+import {
+  closeDatabase,
+  createDatabaseProvider,
+  initializeDatabase,
+} from '../../src/main/backend/infra/sqlite/database';
 import { UnitOfMeasure } from '../../src/shared/unit-of-measure';
 
 const createServices = async () => {
   const tempDirectory = await mkdtemp(path.join(tmpdir(), 'gastos-produtos-'));
-  const databasePath = path.join(tempDirectory, 'database.json');
-  const store = new AppDataStore(databasePath);
+  const databasePath = path.join(tempDirectory, 'App_Data', 'gastos.db');
+  const databaseProvider = createDatabaseProvider(databasePath);
 
   return {
     databasePath,
-    store,
-    products: new ProductService(store),
-    packings: new PackingService(store),
-    groups: new GroupService(store),
-    recipes: new RecipeService(store),
+    products: new ProductService(databaseProvider),
+    packings: new PackingService(databaseProvider),
+    groups: new GroupService(databaseProvider),
+    recipes: new RecipeService(databaseProvider),
   };
 };
 
@@ -34,6 +37,10 @@ describe('main backend services', () => {
 
   beforeEach(async () => {
     services = await createServices();
+  });
+
+  afterEach(async () => {
+    await closeDatabase();
   });
 
   it('persists products and computes unit price from price and quantity', async () => {
@@ -50,14 +57,17 @@ describe('main backend services', () => {
 
     expect(fetchedProduct.unitPrice).toBe(18.9);
 
-    const persistedState = JSON.parse(await readFile(services.databasePath, 'utf8'));
+    const database = await initializeDatabase(services.databasePath);
+    const persistedProducts = await database.all<Array<{ Id: string; Name: string; IsDeleted: number }>>(
+      'SELECT "Id", "Name", "IsDeleted" FROM "Products";',
+    );
 
-    expect(persistedState.products).toHaveLength(1);
-    expect(persistedState.products[0]).toEqual(
+    expect(persistedProducts).toHaveLength(1);
+    expect(persistedProducts[0]).toEqual(
       expect.objectContaining({
-        id: createdProduct.productId,
-        name: 'Chocolate em po',
-        isDeleted: false,
+        Id: createdProduct.productId,
+        Name: 'Chocolate em po',
+        IsDeleted: 0,
       }),
     );
   });

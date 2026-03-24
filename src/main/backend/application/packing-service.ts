@@ -7,7 +7,7 @@ import type {
 
 import { NotFoundError } from '../domain/errors';
 import { createPackingRecord, type PackingRecord } from '../domain/entities';
-import { AppDataStore } from '../infra/app-data-store';
+import type { DatabaseProvider } from '../infra/sqlite/database';
 
 const toReadPacking = (packing: PackingRecord): GetPackingResponse => ({
   id: packing.id,
@@ -19,60 +19,135 @@ const toReadPacking = (packing: PackingRecord): GetPackingResponse => ({
   packingUnitPrice: packing.quantity === 0 ? 0 : packing.price / packing.quantity,
 });
 
-const findActivePacking = (packings: PackingRecord[], id: string): PackingRecord => {
-  const packing = packings.find((item) => item.id === id && !item.isDeleted);
-
-  if (!packing) {
-    throw new NotFoundError('Packing not found.');
-  }
-
-  return packing;
-};
-
 export class PackingService {
-  constructor(private readonly store: AppDataStore) {}
+  constructor(private readonly databaseProvider: DatabaseProvider) {}
 
   async getAll(): Promise<GetPackingResponse[]> {
-    return this.store.read((state) =>
-      state.packings.filter((packing) => !packing.isDeleted).map(toReadPacking),
+    const database = await this.databaseProvider();
+    const rows = await database.all<PackingRecord[]>(
+      `SELECT
+        "Id" AS id,
+        "Name" AS name,
+        "Description" AS description,
+        "Price" AS price,
+        "Quantity" AS quantity,
+        "UnitOfMeasure" AS unitOfMeasure,
+        "CreatedAt" AS createdAt,
+        "UpdatedAt" AS updatedAt,
+        "IsDeleted" AS isDeleted
+      FROM "Packings"
+      WHERE "IsDeleted" = 0
+      ORDER BY "CreatedAt" ASC;`,
     );
+
+    return rows.map(toReadPacking);
   }
 
   async getById(id: string): Promise<GetPackingResponse> {
-    return this.store.read((state) => toReadPacking(findActivePacking(state.packings, id)));
+    const database = await this.databaseProvider();
+    const packing = await database.get<PackingRecord>(
+      `SELECT
+        "Id" AS id,
+        "Name" AS name,
+        "Description" AS description,
+        "Price" AS price,
+        "Quantity" AS quantity,
+        "UnitOfMeasure" AS unitOfMeasure,
+        "CreatedAt" AS createdAt,
+        "UpdatedAt" AS updatedAt,
+        "IsDeleted" AS isDeleted
+      FROM "Packings"
+      WHERE "Id" = ? AND "IsDeleted" = 0;`,
+      id,
+    );
+
+    if (!packing) {
+      throw new NotFoundError('Packing not found.');
+    }
+
+    return toReadPacking(packing);
   }
 
   async create(payload: AddPackingRequest): Promise<AddPackingResponse> {
-    return this.store.mutate((state) => {
-      const packing = createPackingRecord(payload);
-      state.packings.push(packing);
-      return { packingId: packing.id };
-    });
+    const database = await this.databaseProvider();
+    const packing = createPackingRecord(payload);
+
+    await database.run(
+      `INSERT INTO "Packings" (
+        "Id",
+        "Name",
+        "Description",
+        "Price",
+        "Quantity",
+        "UnitOfMeasure",
+        "CreatedAt",
+        "UpdatedAt",
+        "IsDeleted"
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      packing.id,
+      packing.name,
+      packing.description ?? null,
+      packing.price,
+      packing.quantity,
+      packing.unitOfMeasure,
+      packing.createdAt,
+      packing.updatedAt,
+      packing.isDeleted ? 1 : 0,
+    );
+
+    return { packingId: packing.id };
   }
 
   async update(id: string, payload: UpdatePackingDto): Promise<void> {
-    await this.store.mutate((state) => {
-      const packing = findActivePacking(state.packings, id);
+    const database = await this.databaseProvider();
+    const existing = await database.get<{ id: string }>(
+      `SELECT "Id" AS id FROM "Packings" WHERE "Id" = ? AND "IsDeleted" = 0;`,
+      id,
+    );
 
-      packing.name = payload.name;
-      packing.description = payload.description;
-      packing.price = payload.price;
-      packing.quantity = payload.quantity;
-      packing.unitOfMeasure = payload.unitOfMeasure;
-      packing.updatedAt = new Date().toISOString();
-    });
+    if (!existing) {
+      throw new NotFoundError('Packing not found.');
+    }
+
+    await database.run(
+      `UPDATE "Packings"
+      SET
+        "Name" = ?,
+        "Description" = ?,
+        "Price" = ?,
+        "Quantity" = ?,
+        "UnitOfMeasure" = ?,
+        "UpdatedAt" = ?
+      WHERE "Id" = ?;`,
+      payload.name,
+      payload.description ?? null,
+      payload.price,
+      payload.quantity,
+      payload.unitOfMeasure,
+      new Date().toISOString(),
+      id,
+    );
   }
 
   async delete(id: string): Promise<void> {
-    await this.store.mutate((state) => {
-      const packing = state.packings.find((item) => item.id === id && !item.isDeleted);
+    const database = await this.databaseProvider();
+    const existing = await database.get<{ id: string }>(
+      `SELECT "Id" AS id FROM "Packings" WHERE "Id" = ? AND "IsDeleted" = 0;`,
+      id,
+    );
 
-      if (!packing) {
-        throw new NotFoundError('Packing not found. Nothing will be deleted.');
-      }
+    if (!existing) {
+      throw new NotFoundError('Packing not found. Nothing will be deleted.');
+    }
 
-      packing.isDeleted = true;
-      packing.updatedAt = new Date().toISOString();
-    });
+    await database.run(
+      `UPDATE "Packings"
+      SET
+        "IsDeleted" = 1,
+        "UpdatedAt" = ?
+      WHERE "Id" = ?;`,
+      new Date().toISOString(),
+      id,
+    );
   }
 }

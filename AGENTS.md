@@ -33,9 +33,11 @@ Current repo facts that matter:
 
 - Fuse hardening is already enabled in [`forge.config.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/forge.config.ts)
 - The current `webPreferences` in [`main-window.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/windows/main-window.ts) explicitly set `preload`, `contextIsolation: true`, `nodeIntegration: false`, and `sandbox: true`
-- The current window setup is split between [`index.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/index.ts) and [`main-window.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/windows/main-window.ts), but is still close to the starter template in behavior and must not be treated as the final security baseline
+- The current window setup is split between [`index.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/index.ts) and [`main-window.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/windows/main-window.ts), with IPC handler registration and SQLite initialization happening during app startup
 - The current HTML in [`index.html`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/index.html) already defines a CSP and agents must preserve or tighten it when renderer assets change
-- The current preload in [`index.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/preload/index.ts) is empty, which is preferable to exposing broad APIs
+- The current preload in [`index.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/preload/index.ts) exposes a single `window.appApi` bridge backed by typed IPC channels in [`src/shared/ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/shared/ipc.ts)
+- The current backend persistence is local SQLite, initialized in [`database.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/backend/infra/sqlite/database.ts), with versioned migrations in [`migrations.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/backend/infra/sqlite/migrations.ts)
+- The current renderer service layer calls the preload bridge via helpers such as [`electron-api.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/services/electron-api.ts) and service modules under [`src/renderer/services/`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/services/)
 
 When agents add features, they must move the project toward a stricter Electron posture, not away from it.
 
@@ -82,10 +84,15 @@ webPreferences: {
 - Expose capabilities, not raw modules.
 - Never expose `ipcRenderer`, `shell`, `fs`, `path`, or arbitrary Electron/Node objects directly to the renderer.
 - Use `contextBridge.exposeInMainWorld()` with a narrow, typed surface.
+- Treat IPC as the app's internal API boundary between renderer and main.
+- Keep channel names centralized in [`src/shared/ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/shared/ipc.ts).
+- Keep renderer-side API access behind small helpers such as [`electron-api.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/services/electron-api.ts), not ad hoc `window.appApi` access spread through components.
 - Validate every IPC payload.
 - Validate the sender for IPC messages that can mutate state, access files, or trigger OS behavior.
 - Prefer `ipcMain.handle`/`ipcRenderer.invoke` for request-response flows.
 - Avoid sync IPC.
+- Normalize domain errors in `main` and rethrow renderer-safe error objects from `preload`; do not leak raw stack traces or database errors across the bridge.
+- Prefer one handler module per bounded backend surface, with payload guards close to the handler registration.
 
 Preferred preload shape:
 
@@ -104,6 +111,18 @@ contextBridge.exposeInMainWorld('electron', {
   shell,
 });
 ```
+
+### Database And Persistence
+
+- Treat the SQLite database as a privileged main-process concern.
+- Do not access SQLite directly from the renderer or preload.
+- Keep schema creation and migration application in startup-safe infrastructure under [`src/main/backend/infra/sqlite/`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/backend/infra/sqlite/).
+- Keep migrations versioned, append-only, and explicit. Do not silently rewrite already-applied migrations.
+- Default database location is Electron `userData/App_Data/gastos.db`; preserve that convention unless the user explicitly asks to change it.
+- Prefer async database APIs and short transactions.
+- Keep SQL focused and readable; avoid introducing an ORM without a repo-specific reason.
+- Preserve the current domain behavior when changing persistence: soft delete, exact error messages where UX depends on them, and recipe snapshot semantics for ingredients and packings.
+- Schema or migration changes must be reflected in tests that exercise real SQLite behavior.
 
 ### Navigation, External Content, And Remote Data
 
@@ -210,11 +229,13 @@ Agents should follow these patterns in this repository.
 
 - Keep app lifecycle and process-wide wiring in [`index.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/index.ts).
 - Keep `BrowserWindow` creation and window-specific behavior in [`main-window.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/windows/main-window.ts).
+- Keep backend persistence, migrations, and other privileged infrastructure under [`src/main/backend/`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/backend/).
 - Preserve the current `webPreferences` baseline: `preload`, `contextIsolation: true`, `nodeIntegration: false`, and `sandbox: true`.
 - Gate dev-only behavior with `app.isPackaged` or equivalent.
 - Do not leave `mainWindow.webContents.openDevTools()` unconditional.
 - Register navigation and window-creation guards near window setup.
 - Keep startup code small; move feature logic into focused modules when the file grows.
+- Startup may initialize the local database and register IPC handlers, but do not add unrelated heavy work before first window creation.
 
 Recommended direction:
 
@@ -224,11 +245,22 @@ if (!app.isPackaged) {
 }
 ```
 
+### `src/main/backend/`
+
+- `application/` owns backend use cases and business-flow orchestration.
+- `domain/` owns entities, invariants, and backend-specific errors.
+- `infra/sqlite/` owns database bootstrap, migration execution, and low-level persistence helpers.
+- Do not put Electron window code in backend modules.
+- Do not put renderer formatting or UI-specific view logic in backend modules.
+- If a change adds a new persisted capability, define the domain contract first, then wire persistence, then expose it through IPC.
+
 ### `src/preload/index.ts`
 
 - Expose one minimal API namespace.
 - Keep the exported surface typed and explicit.
 - Bridge only the methods the renderer actually needs.
+- Keep error normalization in preload small and deterministic.
+- Do not duplicate backend validation or business rules in preload.
 
 ### `src/renderer/index.ts` And Renderer UI
 
@@ -236,6 +268,9 @@ if (!app.isPackaged) {
 - Keep renderer modules split by feature as the UI grows.
 - Avoid hidden side effects at module import time.
 - Avoid large startup-only imports when the screen can render first and enhance later.
+- Prefer calling domain service wrappers in [`src/renderer/services/`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/services/) instead of reaching into `window.appApi` directly from components.
+- Treat `window.appApi` as the renderer's internal API client, analogous to an HTTP client in a web app.
+- Do not add new renderer features on top of the legacy HTTP helpers when the capability already exists over IPC.
 - Keep CSS and styling co-located with the component or page that owns the UI whenever possible.
 - Prefer `*.module.css` for component- and page-scoped styles.
 - Keep [`index.css`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/styles/index.css) limited to app-wide imports plus truly global concerns such as tokens, resets, shared layout primitives, and a small set of reusable utility or form styles.
@@ -255,11 +290,24 @@ if (!app.isPackaged) {
 
 - Place cross-process constants, types, IPC contracts, and pure utilities here.
 - Do not put Electron-specific APIs or renderer-only UI concerns in this layer.
+- Shared DTOs and IPC payload contracts should be stable enough for both preload and renderer consumers.
+- If a backend contract changes, update the shared type first and then adjust `preload`, `main`, renderer services, and tests consistently.
+
+### API And Service Calls
+
+- For this repository, prefer IPC-backed service calls over HTTP for app features.
+- Renderer service modules should encapsulate CRUD flows and any read-after-write fetches needed by the UI.
+- Keep transport concerns in service helpers, not inside React pages or components.
+- If a temporary HTTP client remains for legacy or migration reasons, keep it isolated and do not expand its footprint without a documented reason.
+- New feature work should usually follow this chain: `shared contract` -> `main backend service` -> `IPC handler` -> `preload bridge` -> `renderer service` -> `UI`.
 
 ### `tests/`
 
 - Keep test code outside `src/`.
 - Prefer mirroring the production structure as tests are added.
+- Prefer real SQLite-backed tests for persistence and migration behavior.
+- Keep IPC tests focused on sender validation, payload validation, and serialized error behavior.
+- Keep renderer tests focused on service contracts and UI behavior, not main-process internals.
 
 ### `assets/`
 
@@ -279,6 +327,9 @@ Before finishing a task, agents must verify:
 - `contextIsolation`, `sandbox`, and `nodeIntegration: false` remain enforced for renderer windows
 - no raw Electron or Node API was exposed to the renderer
 - IPC surface is narrow, typed, and validated
+- SQLite access remains in `main`, not `renderer` or `preload`
+- schema and migration changes are versioned and covered by tests when persistence changed
+- renderer service calls still go through the intended preload/API wrapper
 - navigation and external-link behavior are restricted appropriately
 - no unconditional production DevTools behavior remains
 - no new synchronous main-process bottleneck was introduced
@@ -296,6 +347,9 @@ If a task involves any of the items below, agents should slow down, document the
 - adding a `<webview>`
 - exposing filesystem, shell, or process control to the renderer
 - adding broad IPC passthrough methods
+- accessing the database from preload or renderer
+- bypassing shared IPC contracts with ad hoc payload shapes
+- introducing a second persistence mechanism for the same feature without a migration plan
 - introducing background daemons, long-running child processes, or polling loops
 - using sync filesystem or sync IPC in user-visible paths
 - weakening fuses or packaging protections

@@ -7,7 +7,7 @@ import type {
 
 import { NotFoundError } from '../domain/errors';
 import { createProductRecord, type ProductRecord } from '../domain/entities';
-import { AppDataStore } from '../infra/app-data-store';
+import type { DatabaseProvider } from '../infra/sqlite/database';
 
 const toReadProduct = (product: ProductRecord): GetProductResponse => ({
   id: product.id,
@@ -18,59 +18,129 @@ const toReadProduct = (product: ProductRecord): GetProductResponse => ({
   unitPrice: product.quantity === 0 ? 0 : product.price / product.quantity,
 });
 
-const findActiveProduct = (products: ProductRecord[], id: string): ProductRecord => {
-  const product = products.find((item) => item.id === id && !item.isDeleted);
-
-  if (!product) {
-    throw new NotFoundError('Product not found');
-  }
-
-  return product;
-};
-
 export class ProductService {
-  constructor(private readonly store: AppDataStore) {}
+  constructor(private readonly databaseProvider: DatabaseProvider) {}
 
   async getAll(): Promise<GetProductResponse[]> {
-    return this.store.read((state) =>
-      state.products.filter((product) => !product.isDeleted).map(toReadProduct),
+    const database = await this.databaseProvider();
+    const rows = await database.all<ProductRecord[]>(
+      `SELECT
+        "Id" AS id,
+        "Name" AS name,
+        "Price" AS price,
+        "Quantity" AS quantity,
+        "UnitOfMeasure" AS unitOfMeasure,
+        "CreatedAt" AS createdAt,
+        "UpdatedAt" AS updatedAt,
+        "IsDeleted" AS isDeleted
+      FROM "Products"
+      WHERE "IsDeleted" = 0
+      ORDER BY "CreatedAt" ASC;`,
     );
+
+    return rows.map(toReadProduct);
   }
 
   async getById(id: string): Promise<GetProductResponse> {
-    return this.store.read((state) => toReadProduct(findActiveProduct(state.products, id)));
+    const database = await this.databaseProvider();
+    const product = await database.get<ProductRecord>(
+      `SELECT
+        "Id" AS id,
+        "Name" AS name,
+        "Price" AS price,
+        "Quantity" AS quantity,
+        "UnitOfMeasure" AS unitOfMeasure,
+        "CreatedAt" AS createdAt,
+        "UpdatedAt" AS updatedAt,
+        "IsDeleted" AS isDeleted
+      FROM "Products"
+      WHERE "Id" = ? AND "IsDeleted" = 0;`,
+      id,
+    );
+
+    if (!product) {
+      throw new NotFoundError('Product not found');
+    }
+
+    return toReadProduct(product);
   }
 
   async create(payload: AddProductRequest): Promise<AddProductResponse> {
-    return this.store.mutate((state) => {
-      const product = createProductRecord(payload);
-      state.products.push(product);
-      return { productId: product.id };
-    });
+    const database = await this.databaseProvider();
+    const product = createProductRecord(payload);
+
+    await database.run(
+      `INSERT INTO "Products" (
+        "Id",
+        "Name",
+        "Price",
+        "Quantity",
+        "UnitOfMeasure",
+        "CreatedAt",
+        "UpdatedAt",
+        "IsDeleted"
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+      product.id,
+      product.name,
+      product.price,
+      product.quantity,
+      product.unitOfMeasure,
+      product.createdAt,
+      product.updatedAt,
+      product.isDeleted ? 1 : 0,
+    );
+
+    return { productId: product.id };
   }
 
   async update(id: string, payload: UpdateProductDto): Promise<void> {
-    await this.store.mutate((state) => {
-      const product = findActiveProduct(state.products, id);
+    const database = await this.databaseProvider();
+    const existing = await database.get<{ id: string }>(
+      `SELECT "Id" AS id FROM "Products" WHERE "Id" = ? AND "IsDeleted" = 0;`,
+      id,
+    );
 
-      product.name = payload.name;
-      product.price = payload.price;
-      product.quantity = payload.quantity;
-      product.unitOfMeasure = payload.unitOfMeasure;
-      product.updatedAt = new Date().toISOString();
-    });
+    if (!existing) {
+      throw new NotFoundError('Product not found');
+    }
+
+    await database.run(
+      `UPDATE "Products"
+      SET
+        "Name" = ?,
+        "Price" = ?,
+        "Quantity" = ?,
+        "UnitOfMeasure" = ?,
+        "UpdatedAt" = ?
+      WHERE "Id" = ?;`,
+      payload.name,
+      payload.price,
+      payload.quantity,
+      payload.unitOfMeasure,
+      new Date().toISOString(),
+      id,
+    );
   }
 
   async delete(id: string): Promise<void> {
-    await this.store.mutate((state) => {
-      const product = state.products.find((item) => item.id === id && !item.isDeleted);
+    const database = await this.databaseProvider();
+    const existing = await database.get<{ id: string }>(
+      `SELECT "Id" AS id FROM "Products" WHERE "Id" = ? AND "IsDeleted" = 0;`,
+      id,
+    );
 
-      if (!product) {
-        throw new NotFoundError('Product not found. Nothing will be deleted.');
-      }
+    if (!existing) {
+      throw new NotFoundError('Product not found. Nothing will be deleted.');
+    }
 
-      product.isDeleted = true;
-      product.updatedAt = new Date().toISOString();
-    });
+    await database.run(
+      `UPDATE "Products"
+      SET
+        "IsDeleted" = 1,
+        "UpdatedAt" = ?
+      WHERE "Id" = ?;`,
+      new Date().toISOString(),
+      id,
+    );
   }
 }

@@ -13,7 +13,6 @@ type SidebarProps = {
 export const Sidebar = ({ items }: SidebarProps): React.JSX.Element => (
   <aside className="sidebar">
     <div className="sidebar__brand">
-      <p className="sidebar__eyebrow">Desktop App</p>
       <h1 className="sidebar__title">Amo Doces</h1>
     </div>
 

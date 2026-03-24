@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, createHashRouter, useLocation, type RouteObject } from 'react-router-dom';
+import { Link, Outlet, createHashRouter, useLocation, type RouteObject } from 'react-router-dom';
 
 import { Breadcrumb } from './components/breadcrumb';
 import { Sidebar } from './components/sidebar';
@@ -156,6 +156,32 @@ export const AppShell = (): React.JSX.Element => {
   );
 };
 
+const HomePage = (): React.JSX.Element => {
+  const homeCards = navigationItems.filter((route) => route.path !== '/');
+
+  return (
+    <section>
+      <header className="page-header">
+        <h2 className="page-header__title">Home</h2>
+        <p className="page-header__description">
+          Acesse diretamente os principais módulos do sistema.
+        </p>
+      </header>
+
+      <div className="home-grid">
+        {homeCards.map((route) => (
+          <Link key={route.path} className="home-card" to={route.path}>
+            <p className="home-card__eyebrow">Funcionalidade</p>
+            <h3 className="home-card__title">{route.label}</h3>
+            <p className="home-card__description">{route.description}</p>
+            <span className="home-card__action">Abrir módulo</span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+};
+
 const PlaceholderPage = ({
   title,
   description,
@@ -202,7 +228,10 @@ export const buildAppRoutes = (): RouteObject[] => [
     ),
     children: appRoutes.map((route) => ({
       path: route.path === '/' ? '/' : route.path,
-      element: route.element ?? <PlaceholderPage title={route.label} description={route.description} />,
+      element:
+        route.path === '/'
+          ? <HomePage />
+          : route.element ?? <PlaceholderPage title={route.label} description={route.description} />,
     })),
   },
 ];

@@ -152,11 +152,29 @@ describe('renderer shell', () => {
   it('renders the global navigation shell on the home route', () => {
     renderRoute('/');
 
+    const homeSection = screen.getByRole('heading', { name: 'Home', level: 2 }).closest('section');
+
     expect(
       screen.getByRole('heading', { name: 'Amo Doces', level: 1 }),
     ).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Navegacao principal' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Home' })).toHaveClass('sidebar__link--active');
+    expect(homeSection).not.toBeNull();
+    expect(within(homeSection as HTMLElement).getByRole('link', { name: /Produtos/i })).toHaveAttribute(
+      'href',
+      '/products',
+    );
+    expect(
+      within(homeSection as HTMLElement).getByRole('link', { name: /Embalagens/i }),
+    ).toHaveAttribute('href', '/packings');
+    expect(within(homeSection as HTMLElement).getByRole('link', { name: /Receitas/i })).toHaveAttribute(
+      'href',
+      '/recipes',
+    );
+    expect(within(homeSection as HTMLElement).getByRole('link', { name: /Configuracoes/i })).toHaveAttribute(
+      'href',
+      '/configuration',
+    );
     expect(screen.getByTestId('global-toaster')).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument();
   });

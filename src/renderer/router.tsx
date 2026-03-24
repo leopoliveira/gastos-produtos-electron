@@ -14,6 +14,8 @@ import { PackingsPage } from './pages/packings/packings-page';
 import { RecipesPage } from './pages/recipes/recipes-page';
 import { RecipeFormPage } from './pages/recipes/recipe-form-page';
 import { RecipeVisualizationPage } from './pages/recipes/recipe-visualization-page';
+import { ConfigurationPage } from './pages/configuration/configuration-page';
+import { GroupsPage } from './pages/configuration/groups-page';
 
 type AppRouteDefinition = {
   path: string;
@@ -74,11 +76,13 @@ export const appRoutes: AppRouteDefinition[] = [
     label: 'Configuracoes',
     description: 'Area de configuracoes do app com acesso aos grupos de receita.',
     showInNavigation: true,
+    element: <ConfigurationPage />,
   },
   {
     path: '/configuration/groups',
     label: 'Grupos',
     description: 'Entrada preparada para o CRUD de grupos obrigatorios das receitas.',
+    element: <GroupsPage />,
   },
 ];
 

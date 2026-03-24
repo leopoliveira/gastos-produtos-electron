@@ -95,6 +95,18 @@ const buildPackingLabel = (item: IRecipePackingInput, options: IReadPacking[]): 
   return `${option.name} • ${item.quantity} ${getUnitOfMeasureLabel(option.unitOfMeasure)}`;
 };
 
+const resolveGroupId = (currentGroupId: string | undefined, groups: IReadGroup[]): string => {
+  if (!groups.length) {
+    return '';
+  }
+
+  if (currentGroupId && groups.some((group) => group.id === currentGroupId)) {
+    return currentGroupId;
+  }
+
+  return groups[0]?.id ?? '';
+};
+
 export const RecipeFormPage = (): React.JSX.Element => {
   const navigate = useNavigate();
   const params = useParams<{ id: string }>();
@@ -155,7 +167,7 @@ export const RecipeFormPage = (): React.JSX.Element => {
             description: recipe.description ?? '',
             quantity: String(recipe.quantity),
             sellingValue: String(recipe.sellingValue),
-            groupId: recipe.groupId ?? '',
+            groupId: resolveGroupId(recipe.groupId, loadedGroups),
           });
           setIngredients(
             recipe.ingredients.map((ingredient: { ingredientId: string; quantity: number }) => ({
@@ -174,7 +186,7 @@ export const RecipeFormPage = (): React.JSX.Element => {
 
         setFormState((currentState) => ({
           ...currentState,
-          groupId: currentState.groupId || loadedGroups[0]?.id || '',
+          groupId: resolveGroupId(currentState.groupId, loadedGroups),
         }));
       } catch (loadError) {
         if (isActive) {
@@ -279,7 +291,7 @@ export const RecipeFormPage = (): React.JSX.Element => {
       setGroups(loadedGroups);
       setFormState((currentState) => ({
         ...currentState,
-        groupId: loadedGroups[0]?.id ?? '',
+        groupId: resolveGroupId(undefined, loadedGroups),
       }));
       setIsGroupModalOpen(false);
       toast.success('Grupo criado com sucesso!');

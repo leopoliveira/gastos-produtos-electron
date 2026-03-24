@@ -309,4 +309,40 @@ describe('RecipeFormPage', () => {
     expect(await screen.findByText('Lista de Receitas')).toBeInTheDocument();
     expect(sonnerMocks.toastSuccessMock).toHaveBeenCalledWith('Receita salva com sucesso!');
   });
+
+  it('falls back to the first available group when the recipe group no longer exists', async () => {
+    groupServiceMocks.getAllGroupsMock.mockResolvedValue([
+      { id: 'group-2', name: 'Doces finos' },
+      { id: 'group-3', name: 'Tortas' },
+    ]);
+
+    renderRecipeFormPage('/recipes/recipe-1');
+
+    expect(await screen.findByDisplayValue('Brigadeiro Gourmet')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Grupo' })).toHaveValue('group-2');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() =>
+      expect(recipeServiceMocks.updateRecipeMock).toHaveBeenCalledWith('recipe-1', {
+        name: 'Brigadeiro Gourmet',
+        description: 'Receita atual',
+        quantity: 20,
+        sellingValue: 3.5,
+        groupId: 'group-2',
+        ingredients: [
+          {
+            ingredientId: 'product-1',
+            quantity: 0.5,
+          },
+        ],
+        packings: [
+          {
+            packingId: 'packing-1',
+            quantity: 20,
+          },
+        ],
+      }),
+    );
+  });
 });

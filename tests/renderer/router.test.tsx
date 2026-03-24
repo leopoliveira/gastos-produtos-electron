@@ -123,4 +123,48 @@ describe('renderer shell', () => {
     expect(screen.getByText('Grupo: Brigadeiros')).toBeInTheDocument();
     expect(screen.getByText('Chocolate em po')).toBeInTheDocument();
   });
+
+  it('renders the configuration hub with access to groups', () => {
+    renderRoute('/configuration');
+
+    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    const primaryNavigation = screen.getByRole('navigation', {
+      name: 'Navegacao principal',
+    });
+
+    expect(within(breadcrumb).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
+    expect(within(breadcrumb).getByRole('link', { name: 'Configuracoes' })).toHaveAttribute(
+      'href',
+      '/configuration',
+    );
+    expect(screen.getByRole('heading', { name: 'Configurações', level: 2 })).toBeInTheDocument();
+    expect(within(primaryNavigation).getByRole('link', { name: 'Configuracoes' })).toHaveClass(
+      'sidebar__link--active',
+    );
+    expect(screen.getByRole('link', { name: 'Grupos de Receitas' })).toHaveAttribute(
+      'href',
+      '/configuration/groups',
+    );
+  });
+
+  it('renders the groups route inside the application shell', () => {
+    renderRoute('/configuration/groups');
+
+    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
+
+    expect(within(breadcrumb).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
+    expect(within(breadcrumb).getByRole('link', { name: 'Configuracoes' })).toHaveAttribute(
+      'href',
+      '/configuration',
+    );
+    expect(within(breadcrumb).getByRole('link', { name: 'Grupos' })).toHaveAttribute(
+      'href',
+      '/configuration/groups',
+    );
+    expect(
+      screen.getByRole('heading', { name: 'Grupos de Receitas', level: 2 }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Adicionar' })).toBeInTheDocument();
+    expect(screen.getByText('Carregando grupos...')).toBeInTheDocument();
+  });
 });

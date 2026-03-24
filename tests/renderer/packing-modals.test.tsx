@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { DeletePackingModal } from '../../src/renderer/pages/packings/delete-packing-modal';
 import { PackingFormModal } from '../../src/renderer/pages/packings/packing-form-modal';
-import { formatCurrency } from '../../src/renderer/utils/format';
+import { formatCurrency } from '../../src/shared/format';
 import { UnitOfMeasure } from '../../src/shared/unit-of-measure';
 
 describe('packing modals', () => {
@@ -48,10 +48,21 @@ describe('packing modals', () => {
 
     render(<DeletePackingModal onClose={vi.fn()} onConfirm={onConfirm} />);
 
-    expect(screen.getByText('Deseja realmente excluir este embalagem?')).toBeInTheDocument();
+    expect(screen.getByText('Deseja realmente excluir esta embalagem?')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Excluir' }));
 
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes through the overlay and the close button', () => {
+    const onClose = vi.fn();
+
+    render(<DeletePackingModal onClose={onClose} onConfirm={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('presentation'));
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar modal' }));
+
+    expect(onClose).toHaveBeenCalledTimes(2);
   });
 });

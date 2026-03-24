@@ -7,8 +7,8 @@ import {
   getUnitOfMeasureValues,
   UnitOfMeasure,
 } from '../../../shared/unit-of-measure';
-import { Modal } from '../../components/modal';
-import { formatCurrency } from '../../utils/format';
+import { formatCurrency } from '../../../shared/format';
+import { Modal, ModalActions } from '../../components/modal';
 
 type PackingFormModalProps = {
   packing?: IReadPacking;
@@ -139,14 +139,7 @@ export const PackingFormModal = ({
           </label>
         </div>
 
-        <footer className="modal__footer">
-          <button className="modal__secondary-button" onClick={onClose} type="button">
-            Cancelar
-          </button>
-          <button className="modal__primary-button" type="submit">
-            Salvar
-          </button>
-        </footer>
+        <ModalActions confirmButtonType="submit" confirmLabel="Salvar" onCancel={onClose} />
       </form>
     </Modal>
   );

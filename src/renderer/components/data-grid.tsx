@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useId, useState } from 'react';
 
-import { normalizeString } from '../utils/string';
+import { normalizeString } from '../../shared/string';
 
 type SortDirection = 'asc' | 'desc';
 
@@ -14,14 +14,18 @@ export type DataGridColumn<T> = {
 };
 
 type DataGridProps<T> = {
+  title: string;
   data: T[];
   columns: DataGridColumn<T>[];
-  filterLabel: string;
-  filterPlaceholder: string;
+  filterLabel?: string;
+  filterPlaceholder?: string;
   toolbarContent?: React.ReactNode;
+  actionsRenderer?: (item: T) => React.ReactNode;
+  addLabel?: string;
   getFilterValue?: (item: T) => string;
+  onAdd?: () => void;
   getRowKey: (item: T) => string;
-  emptyMessage: string;
+  emptyMessage?: string;
 };
 
 const compareValues = (left: string | number, right: string | number, direction: SortDirection): number => {
@@ -40,19 +44,34 @@ const compareValues = (left: string | number, right: string | number, direction:
 };
 
 export const DataGrid = <T,>({
+  title,
   data,
   columns,
-  filterLabel,
-  filterPlaceholder,
+  filterLabel = 'Filtrar',
+  filterPlaceholder = 'Digite para buscar',
   toolbarContent,
+  actionsRenderer,
+  addLabel = 'Adicionar',
   getFilterValue,
+  onAdd,
   getRowKey,
-  emptyMessage,
+  emptyMessage = 'Nenhum registro encontrado.',
 }: DataGridProps<T>): React.JSX.Element => {
   const filterId = useId();
   const [filter, setFilter] = useState('');
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  const resolvedColumns = actionsRenderer
+    ? [
+        ...columns,
+        {
+          key: '__actions',
+          header: 'Ações',
+          render: actionsRenderer,
+        } satisfies DataGridColumn<T>,
+      ]
+    : columns;
 
   const normalizedFilter = normalizeString(filter);
   const filteredData = normalizedFilter.length
@@ -64,7 +83,7 @@ export const DataGrid = <T,>({
 
   const sortedData = [...filteredData];
   if (sortColumn) {
-    const activeColumn = columns.find((column) => column.key === sortColumn);
+    const activeColumn = resolvedColumns.find((column) => column.key === sortColumn);
     if (activeColumn?.sortValue) {
       sortedData.sort((left, right) =>
         compareValues(activeColumn.sortValue(left), activeColumn.sortValue(right), sortDirection),
@@ -88,6 +107,15 @@ export const DataGrid = <T,>({
 
   return (
     <section className="data-grid" aria-label="Lista de registros">
+      <div className="data-grid__header">
+        <p className="data-grid__title">{title}</p>
+        {onAdd ? (
+          <button type="button" className="products-page__add-button" onClick={onAdd}>
+            {addLabel}
+          </button>
+        ) : null}
+      </div>
+
       <div className="data-grid__toolbar">
         <label className="data-grid__filter" htmlFor={filterId}>
           <span className="data-grid__filter-label">{filterLabel}</span>
@@ -108,7 +136,7 @@ export const DataGrid = <T,>({
         <table className="data-grid__table">
           <thead>
             <tr>
-              {columns.map((column) => (
+              {resolvedColumns.map((column) => (
                 <th key={column.key} scope="col">
                   {column.sortable ? (
                     <button
@@ -132,14 +160,14 @@ export const DataGrid = <T,>({
             {sortedData.length ? (
               sortedData.map((item) => (
                 <tr key={getRowKey(item)}>
-                  {columns.map((column) => (
+                  {resolvedColumns.map((column) => (
                     <td key={column.key}>{column.render(item)}</td>
                   ))}
                 </tr>
               ))
             ) : (
               <tr>
-                <td className="data-grid__empty-cell" colSpan={columns.length}>
+                <td className="data-grid__empty-cell" colSpan={resolvedColumns.length}>
                   {emptyMessage}
                 </td>
               </tr>

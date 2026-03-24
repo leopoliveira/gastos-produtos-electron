@@ -3,12 +3,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import { formatCurrency } from '../../../shared/format';
 import type { IReadGroup } from '../../../shared/groups';
 import type { IReadRecipe } from '../../../shared/recipes';
 import { DataGrid, type DataGridColumn } from '../../components/data-grid';
 import { GroupService } from '../../services/group-service';
 import { RecipeService } from '../../services/recipe-service';
-import { formatCurrency } from '../../utils/format';
 import { DeleteRecipeModal } from './delete-recipe-modal';
 
 const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
@@ -25,15 +25,7 @@ const getUnitCost = (recipe: IReadRecipe): number =>
 
 const getProfitPerUnit = (recipe: IReadRecipe): number => recipe.sellingValue - getUnitCost(recipe);
 
-const buildRecipeColumns = ({
-  onVisualize,
-  onEdit,
-  onDelete,
-}: {
-  onVisualize: (recipe: IReadRecipe) => void;
-  onEdit: (recipe: IReadRecipe) => void;
-  onDelete: (recipe: IReadRecipe) => void;
-}): DataGridColumn<IReadRecipe>[] => [
+const buildRecipeColumns = (): DataGridColumn<IReadRecipe>[] => [
   {
     key: 'name',
     header: 'Nome',
@@ -71,35 +63,6 @@ const buildRecipeColumns = ({
     key: 'profitPerUnit',
     header: 'Lucro por Un.',
     render: (recipe) => formatCurrency(getProfitPerUnit(recipe)),
-  },
-  {
-    key: 'actions',
-    header: 'Ações',
-    render: (recipe) => (
-      <div className="products-actions">
-        <button
-          type="button"
-          className="products-actions__button"
-          onClick={() => onVisualize(recipe)}
-        >
-          Visualizar
-        </button>
-        <button
-          type="button"
-          className="products-actions__button"
-          onClick={() => onEdit(recipe)}
-        >
-          Editar
-        </button>
-        <button
-          type="button"
-          className="products-actions__button products-actions__button--danger"
-          onClick={() => onDelete(recipe)}
-        >
-          Excluir
-        </button>
-      </div>
-    ),
   },
 ];
 
@@ -158,11 +121,7 @@ export const RecipesPage = (): React.JSX.Element => {
       ? recipes
       : recipes.filter((recipe) => recipe.groupId === selectedGroupId);
 
-  const columns = buildRecipeColumns({
-    onVisualize: (recipe) => navigate(`/recipes/visualize/${recipe.id}`),
-    onEdit: (recipe) => navigate(`/recipes/${recipe.id}`),
-    onDelete: (recipe) => setRecipePendingDeletion(recipe),
-  });
+  const columns = buildRecipeColumns();
 
   const handleConfirmDeletion = async () => {
     if (!recipePendingDeletion) {
@@ -181,7 +140,7 @@ export const RecipesPage = (): React.JSX.Element => {
 
   return (
     <section className="products-page">
-      <header className="page-header products-page__header">
+      <header className="page-header">
         <div>
           <p className="products-page__eyebrow">Cadastro e analise</p>
           <h2 className="page-header__title">Receitas</h2>
@@ -190,14 +149,15 @@ export const RecipesPage = (): React.JSX.Element => {
             por unidade visivel antes da producao.
           </p>
         </div>
-
-        <button
-          type="button"
-          className="products-page__add-button"
-          onClick={() => navigate('/recipes/new')}
-        >
-          Adicionar
-        </button>
+        {loading && !recipes.length ? (
+          <button
+            type="button"
+            className="products-page__add-button"
+            onClick={() => navigate('/recipes/new')}
+          >
+            Adicionar
+          </button>
+        ) : null}
       </header>
 
       {error ? (
@@ -227,6 +187,7 @@ export const RecipesPage = (): React.JSX.Element => {
               ) : null}
 
               <DataGrid
+                title="Receitas"
                 data={filteredRecipes}
                 columns={columns}
                 filterLabel="Filtrar por Nome"
@@ -250,9 +211,35 @@ export const RecipesPage = (): React.JSX.Element => {
                     </select>
                   </label>
                 )}
+                actionsRenderer={(recipe) => (
+                  <div className="products-actions">
+                    <button
+                      type="button"
+                      className="products-actions__button"
+                      onClick={() => navigate(`/recipes/visualize/${recipe.id}`)}
+                    >
+                      Visualizar
+                    </button>
+                    <button
+                      type="button"
+                      className="products-actions__button"
+                      onClick={() => navigate(`/recipes/${recipe.id}`)}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      className="products-actions__button products-actions__button--danger"
+                      onClick={() => setRecipePendingDeletion(recipe)}
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                )}
                 getFilterValue={(recipe) => recipe.name}
                 getRowKey={(recipe) => recipe.id}
                 emptyMessage="Nenhuma receita encontrada."
+                onAdd={() => navigate('/recipes/new')}
               />
             </>
           )}

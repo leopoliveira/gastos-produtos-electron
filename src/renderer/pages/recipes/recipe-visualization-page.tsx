@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import type { IReadRecipe } from '../../../shared/recipes';
+import { formatCurrency } from '../../../shared/format';
 import { getUnitOfMeasureLabel } from '../../../shared/unit-of-measure';
 import { RecipeService } from '../../services/recipe-service';
-import { formatCurrency } from '../../utils/format';
 
 const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
   if (typeof error === 'object' && error !== null) {

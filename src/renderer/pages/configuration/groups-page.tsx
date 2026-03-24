@@ -17,13 +17,7 @@ const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
   return fallbackMessage;
 };
 
-const buildGroupColumns = ({
-  onEdit,
-  onDelete,
-}: {
-  onEdit: (group: IReadGroup) => void;
-  onDelete: (group: IReadGroup) => void;
-}): DataGridColumn<IReadGroup>[] => [
+const buildGroupColumns = (): DataGridColumn<IReadGroup>[] => [
   {
     key: 'name',
     header: 'Nome',
@@ -35,28 +29,6 @@ const buildGroupColumns = ({
     key: 'description',
     header: 'Descrição',
     render: (group) => group.description ?? '-',
-  },
-  {
-    key: 'actions',
-    header: 'Ações',
-    render: (group) => (
-      <div className="products-actions">
-        <button
-          type="button"
-          className="products-actions__button"
-          onClick={() => onEdit(group)}
-        >
-          Editar
-        </button>
-        <button
-          type="button"
-          className="products-actions__button products-actions__button--danger"
-          onClick={() => onDelete(group)}
-        >
-          Excluir
-        </button>
-      </div>
-    ),
   },
 ];
 
@@ -144,17 +116,11 @@ export const GroupsPage = (): React.JSX.Element => {
     }
   };
 
-  const columns = buildGroupColumns({
-    onEdit: (group) => {
-      setGroupInEdition(group);
-      setIsCreateModalOpen(false);
-    },
-    onDelete: (group) => setGroupPendingDeletion(group),
-  });
+  const columns = buildGroupColumns();
 
   return (
     <section className="products-page">
-      <header className="page-header products-page__header">
+      <header className="page-header">
         <div>
           <p className="products-page__eyebrow">Cadastro auxiliar</p>
           <h2 className="page-header__title">Grupos de Receitas</h2>
@@ -162,17 +128,18 @@ export const GroupsPage = (): React.JSX.Element => {
             Cadastre e mantenha as classificações consumidas pelo filtro e pelo formulário de receitas.
           </p>
         </div>
-
-        <button
-          type="button"
-          className="products-page__add-button"
-          onClick={() => {
-            setGroupInEdition(null);
-            setIsCreateModalOpen(true);
-          }}
-        >
-          Adicionar
-        </button>
+        {loading && !groups.length ? (
+          <button
+            type="button"
+            className="products-page__add-button"
+            onClick={() => {
+              setGroupInEdition(null);
+              setIsCreateModalOpen(true);
+            }}
+          >
+            Adicionar
+          </button>
+        ) : null}
       </header>
 
       {error ? (
@@ -202,13 +169,39 @@ export const GroupsPage = (): React.JSX.Element => {
               ) : null}
 
               <DataGrid
+                title="Grupos de Receitas"
                 data={groups}
                 columns={columns}
                 filterLabel="Filtrar por Nome"
                 filterPlaceholder="Digite para buscar"
+                actionsRenderer={(group) => (
+                  <div className="products-actions">
+                    <button
+                      type="button"
+                      className="products-actions__button"
+                      onClick={() => {
+                        setGroupInEdition(group);
+                        setIsCreateModalOpen(false);
+                      }}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      className="products-actions__button products-actions__button--danger"
+                      onClick={() => setGroupPendingDeletion(group)}
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                )}
                 getFilterValue={(group) => group.name}
                 getRowKey={(group) => group.id}
                 emptyMessage="Nenhum grupo encontrado."
+                onAdd={() => {
+                  setGroupInEdition(null);
+                  setIsCreateModalOpen(true);
+                }}
               />
             </>
           )}

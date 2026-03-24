@@ -2,7 +2,7 @@ import type React from 'react';
 import { useState } from 'react';
 
 import type { ICreateGroup, IReadGroup } from '../../../shared/groups';
-import { Modal } from '../../components/modal';
+import { Modal, ModalActions } from '../../components/modal';
 
 type GroupFormModalProps = {
   group?: IReadGroup;
@@ -86,14 +86,7 @@ export const GroupFormModal = ({
           />
         </label>
 
-        <footer className="modal__footer">
-          <button className="modal__secondary-button" onClick={onClose} type="button">
-            Cancelar
-          </button>
-          <button className="modal__primary-button" type="submit">
-            Salvar
-          </button>
-        </footer>
+        <ModalActions confirmButtonType="submit" confirmLabel="Salvar" onCancel={onClose} />
       </form>
     </Modal>
   );

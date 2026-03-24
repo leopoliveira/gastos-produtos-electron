@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 import type { IReadProduct } from '../../../shared/products';
 import type { IRecipeIngredientInput } from '../../../shared/recipes';
-import { Modal } from '../../components/modal';
+import { Modal, ModalActions } from '../../components/modal';
 
 type IngredientFormModalProps = {
   ingredients: IReadProduct[];
@@ -72,14 +72,7 @@ export const IngredientFormModal = ({
           />
         </label>
 
-        <footer className="modal__footer">
-          <button className="modal__secondary-button" onClick={onClose} type="button">
-            Cancelar
-          </button>
-          <button className="modal__primary-button" type="submit">
-            Salvar
-          </button>
-        </footer>
+        <ModalActions confirmButtonType="submit" confirmLabel="Salvar" onCancel={onClose} />
       </form>
     </Modal>
   );

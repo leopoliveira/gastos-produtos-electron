@@ -11,12 +11,12 @@ import type {
   IRecipePackingInput,
 } from '../../../shared/recipes';
 import type { IReadProduct } from '../../../shared/products';
+import { formatCurrency } from '../../../shared/format';
 import { getUnitOfMeasureLabel } from '../../../shared/unit-of-measure';
 import { GroupService } from '../../services/group-service';
 import { PackingService } from '../../services/packing-service';
 import { ProductService } from '../../services/product-service';
 import { RecipeService } from '../../services/recipe-service';
-import { formatCurrency } from '../../utils/format';
 import { GroupFormModal } from './group-form-modal';
 import { IngredientFormModal } from './ingredient-form-modal';
 import { PackingSelectionModal } from './packing-selection-modal';

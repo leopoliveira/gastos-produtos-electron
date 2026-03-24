@@ -3,20 +3,14 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { DataGrid, type DataGridColumn } from '../../components/data-grid';
+import { formatCurrency } from '../../../shared/format';
 import type { ICreateProduct, IReadProduct } from '../../../shared/products';
 import { getUnitOfMeasureLabel } from '../../../shared/unit-of-measure';
-import { formatCurrency } from '../../utils/format';
 import { DeleteProductModal } from './delete-product-modal';
 import { ProductFormModal } from './product-form-modal';
 import { ProductService } from '../../services/product-service';
 
-const buildProductColumns = ({
-  onEdit,
-  onDelete,
-}: {
-  onEdit: (product: IReadProduct) => void;
-  onDelete: (product: IReadProduct) => void;
-}): DataGridColumn<IReadProduct>[] => [
+const buildProductColumns = (): DataGridColumn<IReadProduct>[] => [
   {
     key: 'name',
     header: 'Nome',
@@ -51,28 +45,6 @@ const buildProductColumns = ({
     sortable: true,
     sortValue: (product) => product.unitPrice,
     render: (product) => formatCurrency(product.unitPrice),
-  },
-  {
-    key: 'actions',
-    header: 'Ações',
-    render: (product) => (
-      <div className="products-actions">
-        <button
-          type="button"
-          className="products-actions__button"
-          onClick={() => onEdit(product)}
-        >
-          Editar
-        </button>
-        <button
-          type="button"
-          className="products-actions__button products-actions__button--danger"
-          onClick={() => onDelete(product)}
-        >
-          Excluir
-        </button>
-      </div>
-    ),
   },
 ];
 
@@ -186,17 +158,11 @@ export const ProductsPage = (): React.JSX.Element => {
     }
   };
 
-  const columns = buildProductColumns({
-    onEdit: (product) => {
-      setProductInEdition(product);
-      setIsCreateModalOpen(false);
-    },
-    onDelete: (product) => setProductPendingDeletion(product),
-  });
+  const columns = buildProductColumns();
 
   return (
     <section className="products-page">
-      <header className="page-header products-page__header">
+      <header className="page-header">
         <div>
           <p className="products-page__eyebrow">Cadastro e consulta</p>
           <h2 className="page-header__title">Matéria Prima</h2>
@@ -205,17 +171,18 @@ export const ProductsPage = (): React.JSX.Element => {
             preço e custo unitário.
           </p>
         </div>
-
-        <button
-          type="button"
-          className="products-page__add-button"
-          onClick={() => {
-            setProductInEdition(null);
-            setIsCreateModalOpen(true);
-          }}
-        >
-          Adicionar
-        </button>
+        {loading && !products.length ? (
+          <button
+            type="button"
+            className="products-page__add-button"
+            onClick={() => {
+              setProductInEdition(null);
+              setIsCreateModalOpen(true);
+            }}
+          >
+            Adicionar
+          </button>
+        ) : null}
       </header>
 
       {error ? (
@@ -245,13 +212,38 @@ export const ProductsPage = (): React.JSX.Element => {
               ) : null}
 
               <DataGrid
+                title="Matéria Prima"
                 data={products}
                 columns={columns}
                 filterLabel="Filtrar por Nome"
                 filterPlaceholder="Digite para buscar"
+                actionsRenderer={(product) => (
+                  <div className="products-actions">
+                    <button
+                      type="button"
+                      className="products-actions__button"
+                      onClick={() => {
+                        setProductInEdition(product);
+                        setIsCreateModalOpen(false);
+                      }}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      className="products-actions__button products-actions__button--danger"
+                      onClick={() => setProductPendingDeletion(product)}
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                )}
                 getFilterValue={(product) => product.name}
                 getRowKey={(product) => product.id}
-                emptyMessage="Nenhum registro encontrado."
+                onAdd={() => {
+                  setProductInEdition(null);
+                  setIsCreateModalOpen(true);
+                }}
               />
             </>
           )}

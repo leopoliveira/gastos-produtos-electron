@@ -3,23 +3,17 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import type { ICreatePacking, IReadPacking } from '../../../shared/packings';
+import { formatCurrency } from '../../../shared/format';
 import {
   getUnitOfMeasureLabel,
   getUnitOfMeasureValues,
 } from '../../../shared/unit-of-measure';
 import { DataGrid, type DataGridColumn } from '../../components/data-grid';
 import { PackingService } from '../../services/packing-service';
-import { formatCurrency } from '../../utils/format';
 import { DeletePackingModal } from './delete-packing-modal';
 import { PackingFormModal } from './packing-form-modal';
 
-const buildPackingColumns = ({
-  onEdit,
-  onDelete,
-}: {
-  onEdit: (packing: IReadPacking) => void;
-  onDelete: (packing: IReadPacking) => void;
-}): DataGridColumn<IReadPacking>[] => [
+const buildPackingColumns = (): DataGridColumn<IReadPacking>[] => [
   {
     key: 'name',
     header: 'Nome',
@@ -54,28 +48,6 @@ const buildPackingColumns = ({
     sortable: true,
     sortValue: (packing) => packing.packingUnitPrice,
     render: (packing) => formatCurrency(packing.packingUnitPrice),
-  },
-  {
-    key: 'actions',
-    header: 'Ações',
-    render: (packing) => (
-      <div className="products-actions">
-        <button
-          type="button"
-          className="products-actions__button"
-          onClick={() => onEdit(packing)}
-        >
-          Editar
-        </button>
-        <button
-          type="button"
-          className="products-actions__button products-actions__button--danger"
-          onClick={() => onDelete(packing)}
-        >
-          Excluir
-        </button>
-      </div>
-    ),
   },
 ];
 
@@ -186,17 +158,11 @@ export const PackingsPage = (): React.JSX.Element => {
     }
   };
 
-  const columns = buildPackingColumns({
-    onEdit: (packing) => {
-      setPackingInEdition(packing);
-      setIsCreateModalOpen(false);
-    },
-    onDelete: (packing) => setPackingPendingDeletion(packing),
-  });
+  const columns = buildPackingColumns();
 
   return (
     <section className="products-page">
-      <header className="page-header products-page__header">
+      <header className="page-header">
         <div>
           <p className="products-page__eyebrow">Cadastro e consulta</p>
           <h2 className="page-header__title">Embalagens</h2>
@@ -205,17 +171,18 @@ export const PackingsPage = (): React.JSX.Element => {
             unitario para apoiar a composicao das receitas.
           </p>
         </div>
-
-        <button
-          type="button"
-          className="products-page__add-button"
-          onClick={() => {
-            setPackingInEdition(null);
-            setIsCreateModalOpen(true);
-          }}
-        >
-          Adicionar
-        </button>
+        {loading && !packings.length ? (
+          <button
+            type="button"
+            className="products-page__add-button"
+            onClick={() => {
+              setPackingInEdition(null);
+              setIsCreateModalOpen(true);
+            }}
+          >
+            Adicionar
+          </button>
+        ) : null}
       </header>
 
       {error ? (
@@ -245,13 +212,38 @@ export const PackingsPage = (): React.JSX.Element => {
               ) : null}
 
               <DataGrid
+                title="Embalagens"
                 data={packings}
                 columns={columns}
                 filterLabel="Filtrar por Nome"
                 filterPlaceholder="Digite para buscar"
+                actionsRenderer={(packing) => (
+                  <div className="products-actions">
+                    <button
+                      type="button"
+                      className="products-actions__button"
+                      onClick={() => {
+                        setPackingInEdition(packing);
+                        setIsCreateModalOpen(false);
+                      }}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      className="products-actions__button products-actions__button--danger"
+                      onClick={() => setPackingPendingDeletion(packing)}
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                )}
                 getFilterValue={(packing) => packing.name}
                 getRowKey={(packing) => packing.id}
-                emptyMessage="Nenhum registro encontrado."
+                onAdd={() => {
+                  setPackingInEdition(null);
+                  setIsCreateModalOpen(true);
+                }}
               />
             </>
           )}

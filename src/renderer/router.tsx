@@ -1,14 +1,8 @@
 import React from 'react';
-import { Toaster } from 'sonner';
-import {
-  Link,
-  NavLink,
-  Outlet,
-  createHashRouter,
-  useLocation,
-  type RouteObject,
-} from 'react-router-dom';
+import { Outlet, createHashRouter, useLocation, type RouteObject } from 'react-router-dom';
 
+import { Breadcrumb } from './components/breadcrumb';
+import { Sidebar } from './components/sidebar';
 import { ProductsPage } from './pages/products/products-page';
 import { PackingsPage } from './pages/packings/packings-page';
 import { RecipesPage } from './pages/recipes/recipes-page';
@@ -16,6 +10,7 @@ import { RecipeFormPage } from './pages/recipes/recipe-form-page';
 import { RecipeVisualizationPage } from './pages/recipes/recipe-visualization-page';
 import { ConfigurationPage } from './pages/configuration/configuration-page';
 import { GroupsPage } from './pages/configuration/groups-page';
+import { AppProviders } from './providers/app-providers';
 
 type AppRouteDefinition = {
   path: string;
@@ -148,50 +143,15 @@ export const AppShell = (): React.JSX.Element => {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <div className="sidebar__brand">
-          <p className="sidebar__eyebrow">Desktop App</p>
-          <h1 className="sidebar__title">Amo Doces</h1>
-        </div>
-
-        <nav className="sidebar__nav" aria-label="Navegacao principal">
-          {navigationItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                `sidebar__link${isActive ? ' sidebar__link--active' : ''}`
-              }
-              end={item.path === '/'}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-      </aside>
+      <Sidebar items={navigationItems} />
 
       <main className="main-content">
         <div className="content-panel">
-          {location.pathname !== '/' ? (
-            <nav className="breadcrumbs" aria-label="Breadcrumb">
-              {breadcrumbs.map((breadcrumb, index) => (
-                <React.Fragment key={`${breadcrumb.label}-${index}`}>
-                  {index > 0 ? (
-                    <span className="breadcrumbs__separator" aria-hidden="true">
-                      /
-                    </span>
-                  ) : null}
-                  {breadcrumb.to ? <Link to={breadcrumb.to}>{breadcrumb.label}</Link> : breadcrumb.label}
-                </React.Fragment>
-              ))}
-            </nav>
-          ) : null}
+          {location.pathname !== '/' ? <Breadcrumb items={breadcrumbs} /> : null}
 
           <Outlet />
         </div>
       </main>
-
-      <Toaster richColors position="top-right" />
     </div>
   );
 };
@@ -235,7 +195,11 @@ const PlaceholderPage = ({
 export const buildAppRoutes = (): RouteObject[] => [
   {
     path: '/',
-    element: <AppShell />,
+    element: (
+      <AppProviders>
+        <AppShell />
+      </AppProviders>
+    ),
     children: appRoutes.map((route) => ({
       path: route.path === '/' ? '/' : route.path,
       element: route.element ?? <PlaceholderPage title={route.label} description={route.description} />,

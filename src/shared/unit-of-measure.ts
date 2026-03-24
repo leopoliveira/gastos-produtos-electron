@@ -1,3 +1,5 @@
+import { getEnumStrings } from './enum';
+
 export enum UnitOfMeasure {
   mg = 0,
   g = 1,
@@ -49,4 +51,4 @@ const unitLabels: Record<UnitOfMeasure, string> = {
 export const getUnitOfMeasureLabel = (unit: UnitOfMeasure): string => unitLabels[unit];
 
 export const getUnitOfMeasureValues = (): UnitOfMeasure[] =>
-  Object.values(UnitOfMeasure).filter((value): value is UnitOfMeasure => typeof value === 'number');
+  getEnumStrings(UnitOfMeasure).map((key) => UnitOfMeasure[key as keyof typeof UnitOfMeasure]);

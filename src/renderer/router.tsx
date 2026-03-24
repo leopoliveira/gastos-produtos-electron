@@ -10,6 +10,7 @@ import {
 } from 'react-router-dom';
 
 import { ProductsPage } from './pages/products/products-page';
+import { PackingsPage } from './pages/packings/packings-page';
 
 type AppRouteDefinition = {
   path: string;
@@ -36,8 +37,9 @@ export const appRoutes: AppRouteDefinition[] = [
   {
     path: '/packings',
     label: 'Embalagens',
-    description: 'Area reservada para o fluxo de embalagens com feedback, loading e modais.',
+    description: 'CRUD de embalagens com listagem, filtros, modais e custo unitario.',
     showInNavigation: true,
+    element: <PackingsPage />,
   },
   {
     path: '/recipes',

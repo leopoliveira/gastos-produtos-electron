@@ -57,6 +57,29 @@ describe('renderer shell', () => {
     expect(await screen.findByRole('cell', { name: 'Chocolate em po' })).toBeInTheDocument();
   });
 
+  it('renders the packings route inside the application shell', async () => {
+    renderRoute('/packings');
+
+    const breadcrumb = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    const primaryNavigation = screen.getByRole('navigation', {
+      name: 'Navegacao principal',
+    });
+
+    expect(within(breadcrumb).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
+    expect(within(breadcrumb).getByRole('link', { name: 'Embalagens' })).toHaveAttribute(
+      'href',
+      '/packings',
+    );
+    expect(screen.getByRole('heading', { name: 'Embalagens', level: 2 })).toBeInTheDocument();
+    expect(
+      within(primaryNavigation).getByRole('link', { name: 'Embalagens' }),
+    ).toHaveClass('sidebar__link--active');
+    expect(screen.getByRole('button', { name: 'Adicionar' })).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: 'Filtrar por Nome' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Preço Unitário' })).toBeInTheDocument();
+    expect(await screen.findByRole('cell', { name: 'Caixa para brigadeiro' })).toBeInTheDocument();
+  });
+
   it('builds breadcrumbs for dynamic recipe visualization routes', () => {
     expect(getBreadcrumbs('/recipes/visualize/123')).toEqual([
       { label: 'Home', to: '/' },

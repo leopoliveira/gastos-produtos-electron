@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const appApiMocks = vi.hoisted(() => ({
+  packings: {
+    list: vi.fn(),
+  },
+  products: {
+    list: vi.fn(),
+  },
   recipes: {
     create: vi.fn(),
     delete: vi.fn(),
@@ -48,6 +54,8 @@ const recipe = {
 describe('RecipeService', () => {
   beforeEach(() => {
     vi.resetModules();
+    appApiMocks.packings.list.mockReset();
+    appApiMocks.products.list.mockReset();
     appApiMocks.recipes.create.mockReset();
     appApiMocks.recipes.delete.mockReset();
     appApiMocks.recipes.getById.mockReset();
@@ -64,8 +72,30 @@ describe('RecipeService', () => {
   });
 
   it('creates and updates recipes through the preload bridge', async () => {
-    appApiMocks.recipes.create.mockResolvedValue(recipe);
-    appApiMocks.recipes.update.mockResolvedValue(recipe);
+    appApiMocks.products.list.mockResolvedValue([
+      {
+        id: 'product-1',
+        name: 'Chocolate em po',
+        price: 18.9,
+        quantity: 1,
+        unitOfMeasure: 2,
+        unitPrice: 18.9,
+      },
+    ]);
+    appApiMocks.packings.list.mockResolvedValue([
+      {
+        id: 'packing-1',
+        name: 'Caixa kraft',
+        description: 'Caixa para 4 brigadeiros',
+        price: 20,
+        quantity: 50,
+        unitOfMeasure: 6,
+        packingUnitPrice: 0.4,
+      },
+    ]);
+    appApiMocks.recipes.create.mockResolvedValue({ recipeId: 'recipe-1' });
+    appApiMocks.recipes.update.mockResolvedValue(undefined);
+    appApiMocks.recipes.getById.mockResolvedValue(recipe);
     const { RecipeService } = await import('../../src/renderer/services/recipe-service');
 
     const payload = {
@@ -91,8 +121,52 @@ describe('RecipeService', () => {
     await expect(RecipeService.createRecipe(payload)).resolves.toEqual(recipe);
     await expect(RecipeService.updateRecipe('recipe-1', payload)).resolves.toEqual(recipe);
 
-    expect(appApiMocks.recipes.create).toHaveBeenCalledWith(payload);
-    expect(appApiMocks.recipes.update).toHaveBeenCalledWith('recipe-1', payload);
+    expect(appApiMocks.recipes.create).toHaveBeenCalledWith({
+      name: 'Cookie recheado',
+      description: 'Receita para teste',
+      quantity: 12,
+      sellingValue: 7.5,
+      groupId: 'group-1',
+      ingredients: [
+        {
+          productId: 'product-1',
+          productName: 'Chocolate em po',
+          quantity: 0.5,
+          ingredientPrice: 18.9,
+        },
+      ],
+      packings: [
+        {
+          packingId: 'packing-1',
+          packingName: 'Caixa kraft',
+          quantity: 2,
+          packingUnitPrice: 0.4,
+        },
+      ],
+    });
+    expect(appApiMocks.recipes.update).toHaveBeenCalledWith('recipe-1', {
+      name: 'Cookie recheado',
+      description: 'Receita para teste',
+      quantity: 12,
+      sellingValue: 7.5,
+      groupId: 'group-1',
+      ingredients: [
+        {
+          productId: 'product-1',
+          productName: 'Chocolate em po',
+          quantity: 0.5,
+          ingredientPrice: 18.9,
+        },
+      ],
+      packings: [
+        {
+          packingId: 'packing-1',
+          packingName: 'Caixa kraft',
+          quantity: 2,
+          packingUnitPrice: 0.4,
+        },
+      ],
+    });
   });
 
   it('loads recipe details by id and deletes recipes', async () => {

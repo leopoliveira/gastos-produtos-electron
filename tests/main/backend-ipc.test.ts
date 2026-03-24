@@ -7,18 +7,21 @@ const { ipcMainHandleMock, servicesMock } = vi.hoisted(() => ({
   servicesMock: {
     products: {
       getAll: vi.fn(),
+      getById: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
     },
     packings: {
       getAll: vi.fn(),
+      getById: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
     },
     groups: {
       getAll: vi.fn(),
+      getById: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
@@ -61,7 +64,7 @@ describe('registerBackendIpcHandlers', () => {
     registerBackendIpcHandlers();
     registerBackendIpcHandlers();
 
-    expect(ipcMainHandleMock).toHaveBeenCalledTimes(17);
+    expect(ipcMainHandleMock).toHaveBeenCalledTimes(20);
 
     const productListHandler = getRegisteredHandler(ipcChannels.products.list);
     const productUpdateHandler = getRegisteredHandler(ipcChannels.products.update);
@@ -72,7 +75,7 @@ describe('registerBackendIpcHandlers', () => {
     };
 
     servicesMock.products.getAll.mockResolvedValue([{ id: 'product-1' }]);
-    servicesMock.products.update.mockResolvedValue({ id: 'product-1' });
+    servicesMock.products.update.mockResolvedValue(undefined);
 
     await expect(productListHandler?.(trustedEvent)).resolves.toEqual([{ id: 'product-1' }]);
     await expect(
@@ -85,7 +88,7 @@ describe('registerBackendIpcHandlers', () => {
           unitOfMeasure: 2,
         },
       }),
-    ).resolves.toEqual({ id: 'product-1' });
+    ).resolves.toBeUndefined();
 
     expect(servicesMock.products.update).toHaveBeenCalledWith('product-1', {
       name: 'Chocolate em po',

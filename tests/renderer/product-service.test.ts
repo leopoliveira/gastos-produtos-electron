@@ -4,6 +4,7 @@ const appApiMocks = vi.hoisted(() => ({
   products: {
     create: vi.fn(),
     delete: vi.fn(),
+    getById: vi.fn(),
     list: vi.fn(),
     update: vi.fn(),
   },
@@ -18,6 +19,7 @@ describe('ProductService', () => {
     vi.resetModules();
     appApiMocks.products.create.mockReset();
     appApiMocks.products.delete.mockReset();
+    appApiMocks.products.getById.mockReset();
     appApiMocks.products.list.mockReset();
     appApiMocks.products.update.mockReset();
   });
@@ -49,8 +51,9 @@ describe('ProductService', () => {
       unitOfMeasure: 5,
     };
     const response = { id: 'product-2', ...payload, unitPrice: 4.5 };
-    appApiMocks.products.create.mockResolvedValue(response);
-    appApiMocks.products.update.mockResolvedValue(response);
+    appApiMocks.products.create.mockResolvedValue({ productId: 'product-2' });
+    appApiMocks.products.getById.mockResolvedValue(response);
+    appApiMocks.products.update.mockResolvedValue(undefined);
     appApiMocks.products.delete.mockResolvedValue(undefined);
     const { ProductService } = await import('../../src/renderer/services/product-service');
 
@@ -60,6 +63,8 @@ describe('ProductService', () => {
 
     expect(appApiMocks.products.create).toHaveBeenCalledWith(payload);
     expect(appApiMocks.products.update).toHaveBeenCalledWith('product-2', payload);
+    expect(appApiMocks.products.getById).toHaveBeenNthCalledWith(1, 'product-2');
+    expect(appApiMocks.products.getById).toHaveBeenNthCalledWith(2, 'product-2');
     expect(appApiMocks.products.delete).toHaveBeenCalledWith('product-2');
   });
 });

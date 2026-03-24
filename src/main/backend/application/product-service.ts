@@ -1,10 +1,15 @@
-import type { ICreateProduct, IReadProduct } from '../../../shared/products';
+import type {
+  AddProductRequest,
+  AddProductResponse,
+  GetProductResponse,
+  UpdateProductDto,
+} from '../../../shared/products';
 
 import { NotFoundError } from '../domain/errors';
 import { createProductRecord, type ProductRecord } from '../domain/entities';
 import { AppDataStore } from '../infra/app-data-store';
 
-const toReadProduct = (product: ProductRecord): IReadProduct => ({
+const toReadProduct = (product: ProductRecord): GetProductResponse => ({
   id: product.id,
   name: product.name,
   price: product.price,
@@ -26,22 +31,26 @@ const findActiveProduct = (products: ProductRecord[], id: string): ProductRecord
 export class ProductService {
   constructor(private readonly store: AppDataStore) {}
 
-  async getAll(): Promise<IReadProduct[]> {
+  async getAll(): Promise<GetProductResponse[]> {
     return this.store.read((state) =>
       state.products.filter((product) => !product.isDeleted).map(toReadProduct),
     );
   }
 
-  async create(payload: ICreateProduct): Promise<IReadProduct> {
+  async getById(id: string): Promise<GetProductResponse> {
+    return this.store.read((state) => toReadProduct(findActiveProduct(state.products, id)));
+  }
+
+  async create(payload: AddProductRequest): Promise<AddProductResponse> {
     return this.store.mutate((state) => {
       const product = createProductRecord(payload);
       state.products.push(product);
-      return toReadProduct(product);
+      return { productId: product.id };
     });
   }
 
-  async update(id: string, payload: ICreateProduct): Promise<IReadProduct> {
-    return this.store.mutate((state) => {
+  async update(id: string, payload: UpdateProductDto): Promise<void> {
+    await this.store.mutate((state) => {
       const product = findActiveProduct(state.products, id);
 
       product.name = payload.name;
@@ -49,8 +58,6 @@ export class ProductService {
       product.quantity = payload.quantity;
       product.unitOfMeasure = payload.unitOfMeasure;
       product.updatedAt = new Date().toISOString();
-
-      return toReadProduct(product);
     });
   }
 

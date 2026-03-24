@@ -5,6 +5,7 @@ import { ipcChannels, type AppApi } from '../shared/ipc';
 const appApi: AppApi = {
   products: {
     list: () => ipcRenderer.invoke(ipcChannels.products.list),
+    getById: (id) => ipcRenderer.invoke(ipcChannels.products.getById, { id }),
     create: (payload) => ipcRenderer.invoke(ipcChannels.products.create, payload),
     update: (id, payload) =>
       ipcRenderer.invoke(ipcChannels.products.update, { id, payload }),
@@ -12,6 +13,7 @@ const appApi: AppApi = {
   },
   packings: {
     list: () => ipcRenderer.invoke(ipcChannels.packings.list),
+    getById: (id) => ipcRenderer.invoke(ipcChannels.packings.getById, { id }),
     create: (payload) => ipcRenderer.invoke(ipcChannels.packings.create, payload),
     update: (id, payload) =>
       ipcRenderer.invoke(ipcChannels.packings.update, { id, payload }),
@@ -19,6 +21,7 @@ const appApi: AppApi = {
   },
   groups: {
     list: () => ipcRenderer.invoke(ipcChannels.groups.list),
+    getById: (id) => ipcRenderer.invoke(ipcChannels.groups.getById, { id }),
     create: (payload) => ipcRenderer.invoke(ipcChannels.groups.create, payload),
     update: (id, payload) =>
       ipcRenderer.invoke(ipcChannels.groups.update, { id, payload }),

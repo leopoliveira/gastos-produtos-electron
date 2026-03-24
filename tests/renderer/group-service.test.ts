@@ -4,6 +4,7 @@ const appApiMocks = vi.hoisted(() => ({
   groups: {
     create: vi.fn(),
     delete: vi.fn(),
+    getById: vi.fn(),
     list: vi.fn(),
     update: vi.fn(),
   },
@@ -18,6 +19,7 @@ describe('GroupService', () => {
     vi.resetModules();
     appApiMocks.groups.create.mockReset();
     appApiMocks.groups.delete.mockReset();
+    appApiMocks.groups.getById.mockReset();
     appApiMocks.groups.list.mockReset();
     appApiMocks.groups.update.mockReset();
   });
@@ -48,8 +50,9 @@ describe('GroupService', () => {
       description: 'Linha premium para eventos.',
     };
     const response = { id: 'group-3', ...payload };
-    appApiMocks.groups.create.mockResolvedValue(response);
-    appApiMocks.groups.update.mockResolvedValue(response);
+    appApiMocks.groups.create.mockResolvedValue({ id: 'group-3' });
+    appApiMocks.groups.getById.mockResolvedValue(response);
+    appApiMocks.groups.update.mockResolvedValue(undefined);
     appApiMocks.groups.delete.mockResolvedValue(undefined);
     const { GroupService } = await import('../../src/renderer/services/group-service');
 
@@ -59,6 +62,8 @@ describe('GroupService', () => {
 
     expect(appApiMocks.groups.create).toHaveBeenCalledWith(payload);
     expect(appApiMocks.groups.update).toHaveBeenCalledWith('group-3', payload);
+    expect(appApiMocks.groups.getById).toHaveBeenNthCalledWith(1, 'group-3');
+    expect(appApiMocks.groups.getById).toHaveBeenNthCalledWith(2, 'group-3');
     expect(appApiMocks.groups.delete).toHaveBeenCalledWith('group-3');
   });
 });

@@ -24,18 +24,22 @@ export interface IRecipePackingInput {
   quantity: number;
 }
 
-export interface ICreateRecipe {
+export interface RecipeWriteDto {
   name: string;
   description?: string;
-  quantity: number;
-  sellingValue: number;
+  quantity?: number;
+  sellingValue?: number;
   groupId?: string;
-  ingredients: IRecipeIngredientInput[];
-  packings: IRecipePackingInput[];
+  ingredients: IngredientDto[];
+  packings: PackingDto[];
 }
 
-export interface IUpdateRecipe extends ICreateRecipe {
-  id: string;
+export interface AddRecipeRequest extends RecipeWriteDto {}
+
+export interface UpdateRecipeDto extends RecipeWriteDto {}
+
+export interface AddRecipeResponse {
+  recipeId: string;
 }
 
 export interface IRecipeIngredient extends IRecipeIngredientInput {
@@ -52,10 +56,25 @@ export interface IRecipePacking extends IRecipePackingInput {
   totalCost: number;
 }
 
-export interface IReadRecipe extends Omit<ICreateRecipe, 'ingredients' | 'packings'> {
+export interface GetRecipeResponse extends Omit<RecipeWriteDto, 'ingredients' | 'packings'> {
   id: string;
   groupName?: string;
+  quantity: number;
+  sellingValue: number;
   ingredients: IRecipeIngredient[];
   packings: IRecipePacking[];
   totalCost: number;
 }
+
+export interface ICreateRecipe {
+  name: string;
+  description?: string;
+  quantity: number;
+  sellingValue: number;
+  groupId?: string;
+  ingredients: IRecipeIngredientInput[];
+  packings: IRecipePackingInput[];
+}
+
+export type IUpdateRecipe = ICreateRecipe & { id: string };
+export type IReadRecipe = GetRecipeResponse;

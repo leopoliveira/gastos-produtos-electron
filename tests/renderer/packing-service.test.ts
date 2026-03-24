@@ -4,6 +4,7 @@ const appApiMocks = vi.hoisted(() => ({
   packings: {
     create: vi.fn(),
     delete: vi.fn(),
+    getById: vi.fn(),
     list: vi.fn(),
     update: vi.fn(),
   },
@@ -18,6 +19,7 @@ describe('PackingService', () => {
     vi.resetModules();
     appApiMocks.packings.create.mockReset();
     appApiMocks.packings.delete.mockReset();
+    appApiMocks.packings.getById.mockReset();
     appApiMocks.packings.list.mockReset();
     appApiMocks.packings.update.mockReset();
   });
@@ -51,8 +53,9 @@ describe('PackingService', () => {
       unitOfMeasure: 8,
     };
     const response = { id: 'packing-1', ...payload, packingUnitPrice: 0.3 };
-    appApiMocks.packings.create.mockResolvedValue(response);
-    appApiMocks.packings.update.mockResolvedValue(response);
+    appApiMocks.packings.create.mockResolvedValue({ packingId: 'packing-1' });
+    appApiMocks.packings.getById.mockResolvedValue(response);
+    appApiMocks.packings.update.mockResolvedValue(undefined);
     appApiMocks.packings.delete.mockResolvedValue(undefined);
     const { PackingService } = await import('../../src/renderer/services/packing-service');
 
@@ -62,6 +65,8 @@ describe('PackingService', () => {
 
     expect(appApiMocks.packings.create).toHaveBeenCalledWith(payload);
     expect(appApiMocks.packings.update).toHaveBeenCalledWith('packing-1', payload);
+    expect(appApiMocks.packings.getById).toHaveBeenNthCalledWith(1, 'packing-1');
+    expect(appApiMocks.packings.getById).toHaveBeenNthCalledWith(2, 'packing-1');
     expect(appApiMocks.packings.delete).toHaveBeenCalledWith('packing-1');
   });
 });

@@ -7,11 +7,13 @@ export const GroupService = {
   },
 
   async createGroup(payload: ICreateGroup): Promise<IReadGroup> {
-    return getAppApi().groups.create(payload);
+    const createdGroup = await getAppApi().groups.create(payload);
+    return getAppApi().groups.getById(createdGroup.id);
   },
 
   async updateGroup(id: string, payload: IUpdateGroup): Promise<IReadGroup> {
-    return getAppApi().groups.update(id, payload);
+    await getAppApi().groups.update(id, payload);
+    return getAppApi().groups.getById(id);
   },
 
   async deleteGroup(id: string): Promise<void> {

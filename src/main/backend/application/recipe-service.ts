@@ -1,12 +1,16 @@
 import type {
-  ICreateRecipe,
-  IReadRecipe,
+  AddRecipeRequest,
+  AddRecipeResponse,
+  GetRecipeResponse,
   IRecipeIngredient,
   IRecipePacking,
+  IngredientDto,
+  PackingDto,
+  UpdateRecipeDto,
 } from '../../../shared/recipes';
 import { UnitOfMeasure } from '../../../shared/unit-of-measure';
 
-import { InvalidOperationError, NotFoundError } from '../domain/errors';
+import { NotFoundError } from '../domain/errors';
 import {
   createRecipeRecord,
   type GroupRecord,
@@ -61,7 +65,7 @@ const toReadRecipe = (
   products: ProductRecord[],
   packings: PackingRecord[],
   groups: GroupRecord[],
-): IReadRecipe => ({
+): GetRecipeResponse => ({
   id: recipe.id,
   name: recipe.name,
   description: recipe.description,
@@ -84,53 +88,26 @@ const findActiveRecipe = (recipes: RecipeRecord[], id: string): RecipeRecord => 
   return recipe;
 };
 
-const buildIngredientSnapshots = (
-  payload: ICreateRecipe,
-  products: ProductRecord[],
-): RecipeIngredientRecord[] =>
-  payload.ingredients.map((ingredient) => {
-    const product = products.find((item) => item.id === ingredient.ingredientId && !item.isDeleted);
+const buildIngredientSnapshots = (ingredients: IngredientDto[]): RecipeIngredientRecord[] =>
+  ingredients.map((ingredient) => ({
+    productId: ingredient.productId,
+    productName: ingredient.productName,
+    quantity: ingredient.quantity,
+    ingredientPrice: ingredient.ingredientPrice,
+  }));
 
-    if (!product) {
-      throw new InvalidOperationError(
-        `Não foi possível localizar o ingrediente ${ingredient.ingredientId}.`,
-      );
-    }
-
-    return {
-      productId: ingredient.ingredientId,
-      productName: product.name,
-      quantity: ingredient.quantity,
-      ingredientPrice: product.quantity === 0 ? 0 : product.price / product.quantity,
-    };
-  });
-
-const buildPackingSnapshots = (
-  payload: ICreateRecipe,
-  packings: PackingRecord[],
-): RecipePackingRecord[] =>
-  payload.packings.map((packing) => {
-    const packingOption = packings.find((item) => item.id === packing.packingId && !item.isDeleted);
-
-    if (!packingOption) {
-      throw new InvalidOperationError(
-        `Não foi possível localizar a embalagem ${packing.packingId}.`,
-      );
-    }
-
-    return {
-      packingId: packing.packingId,
-      packingName: packingOption.name,
-      quantity: packing.quantity,
-      packingUnitPrice:
-        packingOption.quantity === 0 ? 0 : packingOption.price / packingOption.quantity,
-    };
-  });
+const buildPackingSnapshots = (packings: PackingDto[]): RecipePackingRecord[] =>
+  packings.map((packing) => ({
+    packingId: packing.packingId,
+    packingName: packing.packingName,
+    quantity: packing.quantity,
+    packingUnitPrice: packing.packingUnitPrice,
+  }));
 
 export class RecipeService {
   constructor(private readonly store: AppDataStore) {}
 
-  async getAll(groupId?: string): Promise<IReadRecipe[]> {
+  async getAll(groupId?: string): Promise<GetRecipeResponse[]> {
     return this.store.read((state) =>
       state.recipes
         .filter((recipe) => !recipe.isDeleted)
@@ -139,28 +116,22 @@ export class RecipeService {
     );
   }
 
-  async getById(id: string): Promise<IReadRecipe | undefined> {
-    return this.store.read((state) => {
-      const recipe = state.recipes.find((item) => item.id === id && !item.isDeleted);
-
-      if (!recipe) {
-        return undefined;
-      }
-
-      return toReadRecipe(recipe, state.products, state.packings, state.groups);
-    });
+  async getById(id: string): Promise<GetRecipeResponse> {
+    return this.store.read((state) =>
+      toReadRecipe(findActiveRecipe(state.recipes, id), state.products, state.packings, state.groups),
+    );
   }
 
-  async create(payload: ICreateRecipe): Promise<IReadRecipe> {
+  async create(payload: AddRecipeRequest): Promise<AddRecipeResponse> {
     return this.store.mutate((state) => {
-      const ingredients = buildIngredientSnapshots(payload, state.products);
-      const packings = buildPackingSnapshots(payload, state.packings);
+      const ingredients = buildIngredientSnapshots(payload.ingredients);
+      const packings = buildPackingSnapshots(payload.packings);
       const recipe = createRecipeRecord({
         name: payload.name,
         description: payload.description,
-        quantity: payload.quantity,
-        sellingValue: payload.sellingValue,
-        groupId: payload.groupId,
+        quantity: payload.quantity ?? 0,
+        sellingValue: payload.sellingValue ?? 0,
+        groupId: payload.groupId ?? undefined,
         ingredients,
         packings,
         totalCost: calculateRecipeTotalCost(ingredients, packings),
@@ -168,27 +139,25 @@ export class RecipeService {
 
       state.recipes.push(recipe);
 
-      return toReadRecipe(recipe, state.products, state.packings, state.groups);
+      return { recipeId: recipe.id };
     });
   }
 
-  async update(id: string, payload: ICreateRecipe): Promise<IReadRecipe> {
-    return this.store.mutate((state) => {
+  async update(id: string, payload: UpdateRecipeDto): Promise<void> {
+    await this.store.mutate((state) => {
       const recipe = findActiveRecipe(state.recipes, id);
-      const ingredients = buildIngredientSnapshots(payload, state.products);
-      const packings = buildPackingSnapshots(payload, state.packings);
+      const ingredients = buildIngredientSnapshots(payload.ingredients);
+      const packings = buildPackingSnapshots(payload.packings);
 
       recipe.name = payload.name;
       recipe.description = payload.description;
-      recipe.quantity = payload.quantity;
-      recipe.sellingValue = payload.sellingValue;
-      recipe.groupId = payload.groupId;
+      recipe.quantity = payload.quantity ?? 0;
+      recipe.sellingValue = payload.sellingValue ?? 0;
+      recipe.groupId = payload.groupId ?? undefined;
       recipe.ingredients = ingredients;
       recipe.packings = packings;
       recipe.totalCost = calculateRecipeTotalCost(ingredients, packings);
       recipe.updatedAt = new Date().toISOString();
-
-      return toReadRecipe(recipe, state.products, state.packings, state.groups);
     });
   }
 

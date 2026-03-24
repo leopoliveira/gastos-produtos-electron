@@ -1,10 +1,18 @@
-export interface ICreateGroup {
+export interface GroupWriteDto {
   name: string;
   description?: string;
 }
 
-export type IUpdateGroup = ICreateGroup;
+export interface AddGroupRequest extends GroupWriteDto {}
 
-export interface IReadGroup extends IUpdateGroup {
+export interface AddGroupResponse {
   id: string;
 }
+
+export interface GroupResponse extends GroupWriteDto {
+  id: string;
+}
+
+export type ICreateGroup = AddGroupRequest;
+export type IUpdateGroup = GroupWriteDto;
+export type IReadGroup = GroupResponse;

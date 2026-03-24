@@ -1,10 +1,15 @@
-import type { ICreatePacking, IReadPacking } from '../../../shared/packings';
+import type {
+  AddPackingRequest,
+  AddPackingResponse,
+  GetPackingResponse,
+  UpdatePackingDto,
+} from '../../../shared/packings';
 
 import { NotFoundError } from '../domain/errors';
 import { createPackingRecord, type PackingRecord } from '../domain/entities';
 import { AppDataStore } from '../infra/app-data-store';
 
-const toReadPacking = (packing: PackingRecord): IReadPacking => ({
+const toReadPacking = (packing: PackingRecord): GetPackingResponse => ({
   id: packing.id,
   name: packing.name,
   description: packing.description,
@@ -27,22 +32,26 @@ const findActivePacking = (packings: PackingRecord[], id: string): PackingRecord
 export class PackingService {
   constructor(private readonly store: AppDataStore) {}
 
-  async getAll(): Promise<IReadPacking[]> {
+  async getAll(): Promise<GetPackingResponse[]> {
     return this.store.read((state) =>
       state.packings.filter((packing) => !packing.isDeleted).map(toReadPacking),
     );
   }
 
-  async create(payload: ICreatePacking): Promise<IReadPacking> {
+  async getById(id: string): Promise<GetPackingResponse> {
+    return this.store.read((state) => toReadPacking(findActivePacking(state.packings, id)));
+  }
+
+  async create(payload: AddPackingRequest): Promise<AddPackingResponse> {
     return this.store.mutate((state) => {
       const packing = createPackingRecord(payload);
       state.packings.push(packing);
-      return toReadPacking(packing);
+      return { packingId: packing.id };
     });
   }
 
-  async update(id: string, payload: ICreatePacking): Promise<IReadPacking> {
-    return this.store.mutate((state) => {
+  async update(id: string, payload: UpdatePackingDto): Promise<void> {
+    await this.store.mutate((state) => {
       const packing = findActivePacking(state.packings, id);
 
       packing.name = payload.name;
@@ -51,8 +60,6 @@ export class PackingService {
       packing.quantity = payload.quantity;
       packing.unitOfMeasure = payload.unitOfMeasure;
       packing.updatedAt = new Date().toISOString();
-
-      return toReadPacking(packing);
     });
   }
 

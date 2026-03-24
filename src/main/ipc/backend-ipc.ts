@@ -6,10 +6,10 @@ import {
   type RecipesListPayload,
   type UpdateEntityPayload,
 } from '../../shared/ipc';
-import type { ICreateGroup, IUpdateGroup } from '../../shared/groups';
-import type { ICreatePacking } from '../../shared/packings';
-import type { ICreateProduct } from '../../shared/products';
-import type { ICreateRecipe } from '../../shared/recipes';
+import type { AddGroupRequest, GroupWriteDto } from '../../shared/groups';
+import type { AddPackingRequest, UpdatePackingDto } from '../../shared/packings';
+import type { AddProductRequest, UpdateProductDto } from '../../shared/products';
+import type { AddRecipeRequest, IngredientDto, PackingDto, UpdateRecipeDto } from '../../shared/recipes';
 import { getBackendServices } from '../backend/application/backend-services';
 
 let handlersRegistered = false;
@@ -61,18 +61,18 @@ const assertUpdatePayload = <TPayload>(
   };
 };
 
-const isGroupMutationPayload = (payload: unknown): payload is ICreateGroup | IUpdateGroup =>
+const isGroupMutationPayload = (payload: unknown): payload is AddGroupRequest | GroupWriteDto =>
   isObject(payload) && typeof payload.name === 'string' &&
   (payload.description === undefined || typeof payload.description === 'string');
 
-const isProductPayload = (payload: unknown): payload is ICreateProduct =>
+const isProductPayload = (payload: unknown): payload is AddProductRequest | UpdateProductDto =>
   isObject(payload) &&
   typeof payload.name === 'string' &&
   typeof payload.price === 'number' &&
   typeof payload.quantity === 'number' &&
   typeof payload.unitOfMeasure === 'number';
 
-const isPackingPayload = (payload: unknown): payload is ICreatePacking =>
+const isPackingPayload = (payload: unknown): payload is AddPackingRequest | UpdatePackingDto =>
   isObject(payload) &&
   typeof payload.name === 'string' &&
   typeof payload.price === 'number' &&
@@ -80,25 +80,31 @@ const isPackingPayload = (payload: unknown): payload is ICreatePacking =>
   typeof payload.unitOfMeasure === 'number' &&
   (payload.description === undefined || typeof payload.description === 'string');
 
-const isRecipeItem = (
-  value: unknown,
-  idField: 'ingredientId' | 'packingId',
-): value is { quantity: number } & Record<typeof idField, string> =>
+const isIngredientDto = (value: unknown): value is IngredientDto =>
   isObject(value) &&
-  typeof value[idField] === 'string' &&
-  typeof value.quantity === 'number';
+  typeof value.productId === 'string' &&
+  typeof value.productName === 'string' &&
+  typeof value.quantity === 'number' &&
+  typeof value.ingredientPrice === 'number';
 
-const isRecipePayload = (payload: unknown): payload is ICreateRecipe =>
+const isPackingDto = (value: unknown): value is PackingDto =>
+  isObject(value) &&
+  typeof value.packingId === 'string' &&
+  typeof value.packingName === 'string' &&
+  typeof value.quantity === 'number' &&
+  typeof value.packingUnitPrice === 'number';
+
+const isRecipePayload = (payload: unknown): payload is AddRecipeRequest | UpdateRecipeDto =>
   isObject(payload) &&
   typeof payload.name === 'string' &&
-  typeof payload.quantity === 'number' &&
-  typeof payload.sellingValue === 'number' &&
+  (payload.quantity === undefined || typeof payload.quantity === 'number') &&
+  (payload.sellingValue === undefined || typeof payload.sellingValue === 'number') &&
   (payload.description === undefined || typeof payload.description === 'string') &&
   (payload.groupId === undefined || typeof payload.groupId === 'string') &&
   Array.isArray(payload.ingredients) &&
-  payload.ingredients.every((ingredient) => isRecipeItem(ingredient, 'ingredientId')) &&
+  payload.ingredients.every(isIngredientDto) &&
   Array.isArray(payload.packings) &&
-  payload.packings.every((packing) => isRecipeItem(packing, 'packingId'));
+  payload.packings.every(isPackingDto);
 
 const assertRecipesListPayload = (payload: unknown): RecipesListPayload => {
   if (payload === undefined) {
@@ -125,6 +131,10 @@ export const registerBackendIpcHandlers = (): void => {
     assertTrustedSender(event);
     return services.products.getAll();
   });
+  ipcMain.handle(ipcChannels.products.getById, (event, payload) => {
+    assertTrustedSender(event);
+    return services.products.getById(assertEntityIdPayload(payload).id);
+  });
   ipcMain.handle(ipcChannels.products.create, (event, payload) => {
     assertTrustedSender(event);
 
@@ -149,6 +159,10 @@ export const registerBackendIpcHandlers = (): void => {
     assertTrustedSender(event);
     return services.packings.getAll();
   });
+  ipcMain.handle(ipcChannels.packings.getById, (event, payload) => {
+    assertTrustedSender(event);
+    return services.packings.getById(assertEntityIdPayload(payload).id);
+  });
   ipcMain.handle(ipcChannels.packings.create, (event, payload) => {
     assertTrustedSender(event);
 
@@ -172,6 +186,10 @@ export const registerBackendIpcHandlers = (): void => {
   ipcMain.handle(ipcChannels.groups.list, (event) => {
     assertTrustedSender(event);
     return services.groups.getAll();
+  });
+  ipcMain.handle(ipcChannels.groups.getById, (event, payload) => {
+    assertTrustedSender(event);
+    return services.groups.getById(assertEntityIdPayload(payload).id);
   });
   ipcMain.handle(ipcChannels.groups.create, (event, payload) => {
     assertTrustedSender(event);

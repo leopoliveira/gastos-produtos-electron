@@ -4,6 +4,7 @@ import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import { UnitOfMeasure } from '../../src/shared/unit-of-measure';
+import sidebarStyles from '../../src/renderer/components/sidebar/sidebar.module.css';
 
 vi.mock('sonner', () => ({
   Toaster: () => <div data-testid="global-toaster" />,
@@ -158,7 +159,7 @@ describe('renderer shell', () => {
       screen.getByRole('heading', { name: 'Amo Doces', level: 1 }),
     ).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Navegacao principal' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Home' })).toHaveClass('sidebar__link--active');
+    expect(screen.getByRole('link', { name: 'Home' })).toHaveClass(sidebarStyles.linkActive);
     expect(homeSection).not.toBeNull();
     expect(within(homeSection as HTMLElement).getByRole('link', { name: /Produtos/i })).toHaveAttribute(
       'href',
@@ -195,7 +196,7 @@ describe('renderer shell', () => {
     expect(screen.getByRole('heading', { name: 'Matéria Prima', level: 2 })).toBeInTheDocument();
     expect(
       within(primaryNavigation).getByRole('link', { name: 'Produtos' }),
-    ).toHaveClass('sidebar__link--active');
+    ).toHaveClass(sidebarStyles.linkActive);
     expect(screen.getByRole('button', { name: 'Adicionar' })).toBeInTheDocument();
     expect(await screen.findByRole('textbox', { name: 'Filtrar por Nome' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Preço Unitário' })).toBeInTheDocument();
@@ -218,7 +219,7 @@ describe('renderer shell', () => {
     expect(screen.getByRole('heading', { name: 'Embalagens', level: 2 })).toBeInTheDocument();
     expect(
       within(primaryNavigation).getByRole('link', { name: 'Embalagens' }),
-    ).toHaveClass('sidebar__link--active');
+    ).toHaveClass(sidebarStyles.linkActive);
     expect(screen.getByRole('button', { name: 'Adicionar' })).toBeInTheDocument();
     expect(await screen.findByRole('textbox', { name: 'Filtrar por Nome' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Preço Unitário' })).toBeInTheDocument();
@@ -249,7 +250,7 @@ describe('renderer shell', () => {
     );
     expect(screen.getByRole('heading', { name: 'Receitas', level: 2 })).toBeInTheDocument();
     expect(within(primaryNavigation).getByRole('link', { name: 'Receitas' })).toHaveClass(
-      'sidebar__link--active',
+      sidebarStyles.linkActive,
     );
     expect(screen.getByRole('button', { name: 'Adicionar' })).toBeInTheDocument();
     expect(await screen.findByRole('textbox', { name: 'Filtrar por Nome' })).toBeInTheDocument();
@@ -284,7 +285,7 @@ describe('renderer shell', () => {
     );
     expect(screen.getByRole('heading', { name: 'Configurações', level: 2 })).toBeInTheDocument();
     expect(within(primaryNavigation).getByRole('link', { name: 'Configuracoes' })).toHaveClass(
-      'sidebar__link--active',
+      sidebarStyles.linkActive,
     );
     expect(screen.getByRole('link', { name: 'Grupos de Receitas' })).toHaveAttribute(
       'href',

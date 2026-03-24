@@ -44,14 +44,18 @@ describe('main backend services', () => {
       unitOfMeasure: UnitOfMeasure.kg,
     });
 
-    expect(createdProduct.unitPrice).toBe(18.9);
+    expect(createdProduct.productId).toBeTruthy();
+
+    const fetchedProduct = await services.products.getById(createdProduct.productId);
+
+    expect(fetchedProduct.unitPrice).toBe(18.9);
 
     const persistedState = JSON.parse(await readFile(services.databasePath, 'utf8'));
 
     expect(persistedState.products).toHaveLength(1);
     expect(persistedState.products[0]).toEqual(
       expect.objectContaining({
-        id: createdProduct.id,
+        id: createdProduct.productId,
         name: 'Chocolate em po',
         isDeleted: false,
       }),
@@ -67,13 +71,15 @@ describe('main backend services', () => {
       unitOfMeasure: UnitOfMeasure.box,
     });
 
-    const updatedPacking = await services.packings.update(createdPacking.id, {
+    await services.packings.update(createdPacking.packingId, {
       name: 'Caixa kraft premium',
       description: 'Linha premium',
       price: 24,
       quantity: 60,
       unitOfMeasure: UnitOfMeasure.box,
     });
+
+    const updatedPacking = await services.packings.getById(createdPacking.packingId);
 
     expect(updatedPacking).toEqual(
       expect.objectContaining({
@@ -82,10 +88,10 @@ describe('main backend services', () => {
       }),
     );
 
-    await services.packings.delete(createdPacking.id);
+    await services.packings.delete(createdPacking.packingId);
 
     await expect(services.packings.getAll()).resolves.toEqual([]);
-    await expect(services.packings.delete(createdPacking.id)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(services.packings.delete(createdPacking.packingId)).rejects.toBeInstanceOf(NotFoundError);
   });
 
   it('validates group names and blocks deletion when an active recipe still references the group', async () => {
@@ -152,37 +158,45 @@ describe('main backend services', () => {
       groupId: group.id,
       ingredients: [
         {
-          ingredientId: product.id,
+          productId: product.productId,
+          productName: 'Chocolate em po',
           quantity: 0.5,
+          ingredientPrice: 18.9,
         },
       ],
       packings: [
         {
-          packingId: packing.id,
+          packingId: packing.packingId,
+          packingName: 'Caixa kraft',
           quantity: 2,
+          packingUnitPrice: 0.4,
         },
       ],
     });
 
-    expect(recipe).toEqual(
+    expect(recipe.recipeId).toBeTruthy();
+
+    const fetchedRecipe = await services.recipes.getById(recipe.recipeId);
+
+    expect(fetchedRecipe).toEqual(
       expect.objectContaining({
         name: 'Brigadeiro tradicional',
         groupName: 'Brigadeiros',
         totalCost: 10.25,
       }),
     );
-    expect(recipe.ingredients).toEqual([
+    expect(fetchedRecipe.ingredients).toEqual([
       expect.objectContaining({
-        ingredientId: product.id,
+        ingredientId: product.productId,
         name: 'Chocolate em po',
         unitOfMeasure: UnitOfMeasure.kg,
         unitPrice: 18.9,
         totalCost: 9.45,
       }),
     ]);
-    expect(recipe.packings).toEqual([
+    expect(fetchedRecipe.packings).toEqual([
       expect.objectContaining({
-        packingId: packing.id,
+        packingId: packing.packingId,
         name: 'Caixa kraft',
         unitOfMeasure: UnitOfMeasure.box,
         unitPrice: 0.4,
@@ -193,7 +207,7 @@ describe('main backend services', () => {
     await expect(services.recipes.getAll(group.id)).resolves.toHaveLength(1);
     await expect(services.recipes.getAll('missing-group')).resolves.toEqual([]);
 
-    const updatedRecipe = await services.recipes.update(recipe.id, {
+    await services.recipes.update(recipe.recipeId, {
       name: 'Brigadeiro gourmet',
       description: 'Receita atualizada',
       quantity: 24,
@@ -201,12 +215,16 @@ describe('main backend services', () => {
       groupId: undefined,
       ingredients: [
         {
-          ingredientId: product.id,
+          productId: product.productId,
+          productName: 'Chocolate em po',
           quantity: 1,
+          ingredientPrice: 18.9,
         },
       ],
       packings: [],
     });
+
+    const updatedRecipe = await services.recipes.getById(recipe.recipeId);
 
     expect(updatedRecipe).toEqual(
       expect.objectContaining({
@@ -216,16 +234,16 @@ describe('main backend services', () => {
       }),
     );
 
-    await expect(services.recipes.getById(recipe.id)).resolves.toEqual(
+    await expect(services.recipes.getById(recipe.recipeId)).resolves.toEqual(
       expect.objectContaining({
-        id: recipe.id,
+        id: recipe.recipeId,
         totalCost: 18.9,
       }),
     );
 
-    await expect(services.recipes.getById('missing-recipe')).resolves.toBeUndefined();
-    await expect(services.recipes.delete(recipe.id)).resolves.toBeUndefined();
+    await expect(services.recipes.getById('missing-recipe')).rejects.toBeInstanceOf(NotFoundError);
+    await expect(services.recipes.delete(recipe.recipeId)).resolves.toBeUndefined();
     await expect(services.recipes.getAll()).resolves.toEqual([]);
-    await expect(services.recipes.delete(recipe.id)).rejects.toBeInstanceOf(NotFoundError);
+    await expect(services.recipes.delete(recipe.recipeId)).rejects.toBeInstanceOf(NotFoundError);
   });
 });

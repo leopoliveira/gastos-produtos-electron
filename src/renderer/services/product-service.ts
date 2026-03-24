@@ -11,11 +11,13 @@ export const ProductService = {
   },
 
   async createProduct(payload: ICreateProduct): Promise<IReadProduct> {
-    return getAppApi().products.create(payload);
+    const createdProduct = await getAppApi().products.create(payload);
+    return getAppApi().products.getById(createdProduct.productId);
   },
 
   async updateProduct(id: string, payload: ICreateProduct): Promise<IReadProduct> {
-    return getAppApi().products.update(id, payload);
+    await getAppApi().products.update(id, payload);
+    return getAppApi().products.getById(id);
   },
 
   async deleteProduct(id: string): Promise<void> {

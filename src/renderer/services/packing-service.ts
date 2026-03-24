@@ -11,11 +11,13 @@ export const PackingService = {
   },
 
   async createPacking(payload: ICreatePacking): Promise<IReadPacking> {
-    return getAppApi().packings.create(payload);
+    const createdPacking = await getAppApi().packings.create(payload);
+    return getAppApi().packings.getById(createdPacking.packingId);
   },
 
   async updatePacking(id: string, payload: ICreatePacking): Promise<IReadPacking> {
-    return getAppApi().packings.update(id, payload);
+    await getAppApi().packings.update(id, payload);
+    return getAppApi().packings.getById(id);
   },
 
   async deletePacking(id: string): Promise<void> {

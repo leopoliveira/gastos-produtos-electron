@@ -4,6 +4,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   build: {
     rollupOptions: {
+      external: ['sqlite3', 'sqlite'],
       output: {
         entryFileNames: 'main.js',
       },

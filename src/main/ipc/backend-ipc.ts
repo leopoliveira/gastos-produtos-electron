@@ -4,6 +4,8 @@ import {
   ipcChannels,
   type EntityIdPayload,
   type RecipesListPayload,
+  serializeIpcError,
+  type SerializedIpcError,
   type UpdateEntityPayload,
 } from '../../shared/ipc';
 import type { AddGroupRequest, GroupWriteDto } from '../../shared/groups';
@@ -11,6 +13,7 @@ import type { AddPackingRequest, UpdatePackingDto } from '../../shared/packings'
 import type { AddProductRequest, UpdateProductDto } from '../../shared/products';
 import type { AddRecipeRequest, IngredientDto, PackingDto, UpdateRecipeDto } from '../../shared/recipes';
 import { getBackendServices } from '../backend/application/backend-services';
+import { InvalidOperationError, NotFoundError } from '../backend/domain/errors';
 
 let handlersRegistered = false;
 
@@ -120,6 +123,56 @@ const assertRecipesListPayload = (payload: unknown): RecipesListPayload => {
   };
 };
 
+const toSerializedIpcError = (error: unknown): SerializedIpcError => {
+  if (error instanceof NotFoundError) {
+    return {
+      name: error.name,
+      message: error.message,
+      detail: error.message,
+      problem: {
+        code: 'not_found',
+        detail: error.message,
+        status: 404,
+        title: 'Not Found',
+      },
+    };
+  }
+
+  if (error instanceof InvalidOperationError) {
+    return {
+      name: error.name,
+      message: error.message,
+      detail: error.message,
+      problem: {
+        code: 'invalid_operation',
+        detail: error.message,
+        status: 400,
+        title: 'Bad Request',
+      },
+    };
+  }
+
+  return {
+    name: 'Error',
+    message: 'Unexpected backend error.',
+    detail: 'Unexpected backend error.',
+    problem: {
+      code: 'internal_error',
+      detail: 'Unexpected backend error.',
+      status: 500,
+      title: 'Internal Server Error',
+    },
+  };
+};
+
+const invokeBackendService = async <TResult>(operation: () => Promise<TResult> | TResult): Promise<TResult> => {
+  try {
+    return await operation();
+  } catch (error) {
+    throw new Error(serializeIpcError(toSerializedIpcError(error)));
+  }
+};
+
 export const registerBackendIpcHandlers = (): void => {
   if (handlersRegistered) {
     return;
@@ -129,11 +182,12 @@ export const registerBackendIpcHandlers = (): void => {
 
   ipcMain.handle(ipcChannels.products.list, (event) => {
     assertTrustedSender(event);
-    return services.products.getAll();
+    return invokeBackendService(() => services.products.getAll());
   });
   ipcMain.handle(ipcChannels.products.getById, (event, payload) => {
     assertTrustedSender(event);
-    return services.products.getById(assertEntityIdPayload(payload).id);
+    const entityId = assertEntityIdPayload(payload);
+    return invokeBackendService(() => services.products.getById(entityId.id));
   });
   ipcMain.handle(ipcChannels.products.create, (event, payload) => {
     assertTrustedSender(event);
@@ -142,26 +196,28 @@ export const registerBackendIpcHandlers = (): void => {
       throw new Error('Invalid IPC payload: expected a product payload.');
     }
 
-    return services.products.create(payload);
+    return invokeBackendService(() => services.products.create(payload));
   });
   ipcMain.handle(ipcChannels.products.update, (event, payload) => {
     assertTrustedSender(event);
     const mutation = assertUpdatePayload(payload, isProductPayload);
 
-    return services.products.update(mutation.id, mutation.payload);
+    return invokeBackendService(() => services.products.update(mutation.id, mutation.payload));
   });
   ipcMain.handle(ipcChannels.products.delete, (event, payload) => {
     assertTrustedSender(event);
-    return services.products.delete(assertEntityIdPayload(payload).id);
+    const entityId = assertEntityIdPayload(payload);
+    return invokeBackendService(() => services.products.delete(entityId.id));
   });
 
   ipcMain.handle(ipcChannels.packings.list, (event) => {
     assertTrustedSender(event);
-    return services.packings.getAll();
+    return invokeBackendService(() => services.packings.getAll());
   });
   ipcMain.handle(ipcChannels.packings.getById, (event, payload) => {
     assertTrustedSender(event);
-    return services.packings.getById(assertEntityIdPayload(payload).id);
+    const entityId = assertEntityIdPayload(payload);
+    return invokeBackendService(() => services.packings.getById(entityId.id));
   });
   ipcMain.handle(ipcChannels.packings.create, (event, payload) => {
     assertTrustedSender(event);
@@ -170,26 +226,28 @@ export const registerBackendIpcHandlers = (): void => {
       throw new Error('Invalid IPC payload: expected a packing payload.');
     }
 
-    return services.packings.create(payload);
+    return invokeBackendService(() => services.packings.create(payload));
   });
   ipcMain.handle(ipcChannels.packings.update, (event, payload) => {
     assertTrustedSender(event);
     const mutation = assertUpdatePayload(payload, isPackingPayload);
 
-    return services.packings.update(mutation.id, mutation.payload);
+    return invokeBackendService(() => services.packings.update(mutation.id, mutation.payload));
   });
   ipcMain.handle(ipcChannels.packings.delete, (event, payload) => {
     assertTrustedSender(event);
-    return services.packings.delete(assertEntityIdPayload(payload).id);
+    const entityId = assertEntityIdPayload(payload);
+    return invokeBackendService(() => services.packings.delete(entityId.id));
   });
 
   ipcMain.handle(ipcChannels.groups.list, (event) => {
     assertTrustedSender(event);
-    return services.groups.getAll();
+    return invokeBackendService(() => services.groups.getAll());
   });
   ipcMain.handle(ipcChannels.groups.getById, (event, payload) => {
     assertTrustedSender(event);
-    return services.groups.getById(assertEntityIdPayload(payload).id);
+    const entityId = assertEntityIdPayload(payload);
+    return invokeBackendService(() => services.groups.getById(entityId.id));
   });
   ipcMain.handle(ipcChannels.groups.create, (event, payload) => {
     assertTrustedSender(event);
@@ -198,26 +256,29 @@ export const registerBackendIpcHandlers = (): void => {
       throw new Error('Invalid IPC payload: expected a group payload.');
     }
 
-    return services.groups.create(payload);
+    return invokeBackendService(() => services.groups.create(payload));
   });
   ipcMain.handle(ipcChannels.groups.update, (event, payload) => {
     assertTrustedSender(event);
     const mutation = assertUpdatePayload(payload, isGroupMutationPayload);
 
-    return services.groups.update(mutation.id, mutation.payload);
+    return invokeBackendService(() => services.groups.update(mutation.id, mutation.payload));
   });
   ipcMain.handle(ipcChannels.groups.delete, (event, payload) => {
     assertTrustedSender(event);
-    return services.groups.delete(assertEntityIdPayload(payload).id);
+    const entityId = assertEntityIdPayload(payload);
+    return invokeBackendService(() => services.groups.delete(entityId.id));
   });
 
   ipcMain.handle(ipcChannels.recipes.list, (event, payload) => {
     assertTrustedSender(event);
-    return services.recipes.getAll(assertRecipesListPayload(payload).groupId);
+    const listPayload = assertRecipesListPayload(payload);
+    return invokeBackendService(() => services.recipes.getAll(listPayload.groupId));
   });
   ipcMain.handle(ipcChannels.recipes.getById, (event, payload) => {
     assertTrustedSender(event);
-    return services.recipes.getById(assertEntityIdPayload(payload).id);
+    const entityId = assertEntityIdPayload(payload);
+    return invokeBackendService(() => services.recipes.getById(entityId.id));
   });
   ipcMain.handle(ipcChannels.recipes.create, (event, payload) => {
     assertTrustedSender(event);
@@ -226,17 +287,18 @@ export const registerBackendIpcHandlers = (): void => {
       throw new Error('Invalid IPC payload: expected a recipe payload.');
     }
 
-    return services.recipes.create(payload);
+    return invokeBackendService(() => services.recipes.create(payload));
   });
   ipcMain.handle(ipcChannels.recipes.update, (event, payload) => {
     assertTrustedSender(event);
     const mutation = assertUpdatePayload(payload, isRecipePayload);
 
-    return services.recipes.update(mutation.id, mutation.payload);
+    return invokeBackendService(() => services.recipes.update(mutation.id, mutation.payload));
   });
   ipcMain.handle(ipcChannels.recipes.delete, (event, payload) => {
     assertTrustedSender(event);
-    return services.recipes.delete(assertEntityIdPayload(payload).id);
+    const entityId = assertEntityIdPayload(payload);
+    return invokeBackendService(() => services.recipes.delete(entityId.id));
   });
 
   handlersRegistered = true;

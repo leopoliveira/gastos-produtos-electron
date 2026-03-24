@@ -139,4 +139,47 @@ describe('registerBackendIpcHandlers', () => {
       ),
     ).toThrow('Invalid IPC payload: expected a non-empty id.');
   });
+
+  it('serializes backend domain errors with problem details for the preload bridge', async () => {
+    const { ipcChannels, parseIpcError } = await import('../../src/shared/ipc');
+    const { registerBackendIpcHandlers } = await import('../../src/main/ipc/backend-ipc');
+    const { NotFoundError } = await import('../../src/main/backend/domain/errors');
+    const getRegisteredHandler = (channel: string) =>
+      ipcMainHandleMock.mock.calls.find(([registeredChannel]) => registeredChannel === channel)?.[1];
+
+    registerBackendIpcHandlers();
+
+    const groupGetByIdHandler = getRegisteredHandler(ipcChannels.groups.getById);
+    servicesMock.groups.getById.mockRejectedValue(new NotFoundError('Grupo não encontrado.'));
+
+    await expect(
+      groupGetByIdHandler?.(
+        {
+          senderFrame: {
+            url: 'http://localhost:5173/configuration',
+          },
+        },
+        { id: 'missing-group' },
+      ),
+    ).rejects.toMatchObject({
+      message: expect.any(String),
+    });
+
+    await expect(
+      groupGetByIdHandler?.(
+        {
+          senderFrame: {
+            url: 'http://localhost:5173/configuration',
+          },
+        },
+        { id: 'missing-group' },
+      ),
+    ).rejects.toSatisfy((error: Error) => {
+      const serialized = parseIpcError(error.message);
+
+      return serialized?.problem.status === 404 &&
+        serialized.problem.title === 'Not Found' &&
+        serialized.problem.detail === 'Grupo não encontrado.';
+    });
+  });
 });

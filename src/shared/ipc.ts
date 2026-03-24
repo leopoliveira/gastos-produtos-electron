@@ -66,6 +66,37 @@ export interface RecipesListPayload {
   groupId?: string;
 }
 
+export interface IpcProblemDetails {
+  code: 'internal_error' | 'invalid_operation' | 'not_found';
+  detail: string;
+  status: number;
+  title: string;
+}
+
+export interface SerializedIpcError {
+  detail: string;
+  message: string;
+  name: string;
+  problem: IpcProblemDetails;
+}
+
+const IPC_ERROR_PREFIX = '__APP_IPC_ERROR__:';
+
+export const serializeIpcError = (payload: SerializedIpcError): string =>
+  `${IPC_ERROR_PREFIX}${JSON.stringify(payload)}`;
+
+export const parseIpcError = (message: string): SerializedIpcError | undefined => {
+  if (!message.startsWith(IPC_ERROR_PREFIX)) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(message.slice(IPC_ERROR_PREFIX.length)) as SerializedIpcError;
+  } catch {
+    return undefined;
+  }
+};
+
 export interface ProductApi {
   create(payload: AddProductRequest): Promise<AddProductResponse>;
   delete(id: string): Promise<void>;

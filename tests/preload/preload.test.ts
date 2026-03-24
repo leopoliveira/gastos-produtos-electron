@@ -56,4 +56,36 @@ describe('preload appApi bridge', () => {
       },
     });
   });
+
+  it('normalizes serialized IPC backend errors into problem details for the renderer', async () => {
+    const { serializeIpcError } = await import('../../src/shared/ipc');
+
+    invokeMock.mockRejectedValueOnce(
+      new Error(
+        serializeIpcError({
+          name: 'InvalidOperationError',
+          message: 'Nome do grupo é obrigatório.',
+          detail: 'Nome do grupo é obrigatório.',
+          problem: {
+            code: 'invalid_operation',
+            detail: 'Nome do grupo é obrigatório.',
+            status: 400,
+            title: 'Bad Request',
+          },
+        }),
+      ),
+    );
+
+    await import('../../src/preload/index');
+
+    const appApi = exposeInMainWorldMock.mock.calls[0]?.[1];
+
+    await expect(appApi.groups.create({ name: '' })).rejects.toEqual({
+      code: 'invalid_operation',
+      detail: 'Nome do grupo é obrigatório.',
+      message: 'Nome do grupo é obrigatório.',
+      status: 400,
+      title: 'Bad Request',
+    });
+  });
 });

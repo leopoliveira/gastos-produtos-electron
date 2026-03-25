@@ -8,7 +8,7 @@ import type {
   PackingDto,
   UpdateRecipeDto,
 } from '../../../shared/recipes';
-import { UnitOfMeasure } from '../../../shared/unit-of-measure';
+import { convertQuantityBetweenUnits, UnitOfMeasure } from '../../../shared/unit-of-measure';
 
 import { NotFoundError } from '../domain/errors';
 import {
@@ -75,10 +75,11 @@ const toRecipeIngredient = (
   products: ProductRecord[],
 ): IRecipeIngredient => ({
   ingredientId: ingredient.productId,
-  quantity: ingredient.quantity,
+  quantity: ingredient.displayQuantity,
   name: ingredient.productName,
   unitPrice: ingredient.ingredientPrice,
   unitOfMeasure:
+    ingredient.unitOfMeasure ??
     products.find((product) => product.id === ingredient.productId && !product.isDeleted)?.unitOfMeasure ??
     UnitOfMeasure.un,
   totalCost: ingredient.quantity * ingredient.ingredientPrice,
@@ -89,10 +90,11 @@ const toRecipePacking = (
   packings: PackingRecord[],
 ): IRecipePacking => ({
   packingId: packing.packingId,
-  quantity: packing.quantity,
+  quantity: packing.displayQuantity,
   name: packing.packingName,
   unitPrice: packing.packingUnitPrice,
   unitOfMeasure:
+    packing.unitOfMeasure ??
     packings.find((packingOption) => packingOption.id === packing.packingId && !packingOption.isDeleted)
       ?.unitOfMeasure ?? UnitOfMeasure.un,
   totalCost: packing.quantity * packing.packingUnitPrice,
@@ -116,21 +118,51 @@ const toReadRecipe = (
   totalCost: recipe.totalCost,
 });
 
-const buildIngredientSnapshots = (ingredients: IngredientDto[]): RecipeIngredientRecord[] =>
-  ingredients.map((ingredient) => ({
-    productId: ingredient.productId,
-    productName: ingredient.productName,
-    quantity: ingredient.quantity,
-    ingredientPrice: ingredient.ingredientPrice,
-  }));
+const buildIngredientSnapshots = (
+  ingredients: IngredientDto[],
+  products: ProductRecord[],
+): RecipeIngredientRecord[] =>
+  ingredients.map((ingredient) => {
+    const sourceProduct = products.find((product) => product.id === ingredient.productId);
+    if (!sourceProduct) {
+      throw new Error(`Product ${ingredient.productId} not found.`);
+    }
+    return {
+      productId: ingredient.productId,
+      productName: ingredient.productName,
+      quantity: convertQuantityBetweenUnits(
+        ingredient.quantity,
+        ingredient.unitOfMeasure,
+        sourceProduct.unitOfMeasure,
+      ),
+      displayQuantity: ingredient.quantity,
+      unitOfMeasure: ingredient.unitOfMeasure,
+      ingredientPrice: ingredient.ingredientPrice,
+    };
+  });
 
-const buildPackingSnapshots = (packings: PackingDto[]): RecipePackingRecord[] =>
-  packings.map((packing) => ({
-    packingId: packing.packingId,
-    packingName: packing.packingName,
-    quantity: packing.quantity,
-    packingUnitPrice: packing.packingUnitPrice,
-  }));
+const buildPackingSnapshots = (
+  packings: PackingDto[],
+  packingOptions: PackingRecord[],
+): RecipePackingRecord[] =>
+  packings.map((packing) => {
+    const sourcePacking = packingOptions.find((item) => item.id === packing.packingId);
+    if (!sourcePacking) {
+      throw new Error(`Packing ${packing.packingId} not found.`);
+    }
+    return {
+      packingId: packing.packingId,
+      packingName: packing.packingName,
+      quantity: convertQuantityBetweenUnits(
+        packing.quantity,
+        packing.unitOfMeasure,
+        sourcePacking.unitOfMeasure,
+      ),
+      displayQuantity: packing.quantity,
+      unitOfMeasure: packing.unitOfMeasure,
+      packingUnitPrice: packing.packingUnitPrice,
+    };
+  });
 
 export class RecipeService {
   constructor(private readonly databaseProvider: DatabaseProvider) {}
@@ -190,8 +222,9 @@ export class RecipeService {
 
   async create(payload: AddRecipeRequest): Promise<AddRecipeResponse> {
     const database = await this.databaseProvider();
-    const ingredients = buildIngredientSnapshots(payload.ingredients);
-    const packings = buildPackingSnapshots(payload.packings);
+    const [products, packingsOptions] = await Promise.all([this.getProducts(), this.getPackings()]);
+    const ingredients = buildIngredientSnapshots(payload.ingredients, products);
+    const packings = buildPackingSnapshots(payload.packings, packingsOptions);
     const recipe = createRecipeRecord({
       name: payload.name,
       description: payload.description,
@@ -236,12 +269,16 @@ export class RecipeService {
             "ProductId",
             "ProductName",
             "Quantity",
+            "DisplayQuantity",
+            "UnitOfMeasure",
             "IngredientPrice"
-          ) VALUES (?, ?, ?, ?, ?);`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?);`,
           recipe.id,
           ingredient.productId,
           ingredient.productName,
           ingredient.quantity,
+          ingredient.displayQuantity,
+          ingredient.unitOfMeasure,
           ingredient.ingredientPrice,
         );
       }
@@ -253,12 +290,16 @@ export class RecipeService {
             "PackingId",
             "PackingName",
             "Quantity",
+            "DisplayQuantity",
+            "UnitOfMeasure",
             "UnitPrice"
-          ) VALUES (?, ?, ?, ?, ?);`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?);`,
           recipe.id,
           packing.packingId,
           packing.packingName,
           packing.quantity,
+          packing.displayQuantity,
+          packing.unitOfMeasure,
           packing.packingUnitPrice,
         );
       }
@@ -287,8 +328,9 @@ export class RecipeService {
       throw new NotFoundError(RECIPE_NOT_FOUND_MESSAGE);
     }
 
-    const ingredients = buildIngredientSnapshots(payload.ingredients);
-    const packings = buildPackingSnapshots(payload.packings);
+    const [products, packingsOptions] = await Promise.all([this.getProducts(), this.getPackings()]);
+    const ingredients = buildIngredientSnapshots(payload.ingredients, products);
+    const packings = buildPackingSnapshots(payload.packings, packingsOptions);
     const totalCost = calculateRecipeTotalCost(ingredients, packings);
 
     await runInTransaction(database, async () => {
@@ -323,12 +365,16 @@ export class RecipeService {
             "ProductId",
             "ProductName",
             "Quantity",
+            "DisplayQuantity",
+            "UnitOfMeasure",
             "IngredientPrice"
-          ) VALUES (?, ?, ?, ?, ?);`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?);`,
           id,
           ingredient.productId,
           ingredient.productName,
           ingredient.quantity,
+          ingredient.displayQuantity,
+          ingredient.unitOfMeasure,
           ingredient.ingredientPrice,
         );
       }
@@ -340,12 +386,16 @@ export class RecipeService {
             "PackingId",
             "PackingName",
             "Quantity",
+            "DisplayQuantity",
+            "UnitOfMeasure",
             "UnitPrice"
-          ) VALUES (?, ?, ?, ?, ?);`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?);`,
           id,
           packing.packingId,
           packing.packingName,
           packing.quantity,
+          packing.displayQuantity,
+          packing.unitOfMeasure,
           packing.packingUnitPrice,
         );
       }
@@ -394,6 +444,8 @@ export class RecipeService {
         productId: ingredient.productId,
         productName: ingredient.productName,
         quantity: ingredient.quantity,
+        displayQuantity: ingredient.displayQuantity,
+        unitOfMeasure: ingredient.unitOfMeasure,
         ingredientPrice: ingredient.ingredientPrice,
       });
     }
@@ -403,6 +455,8 @@ export class RecipeService {
         packingId: packing.packingId,
         packingName: packing.packingName,
         quantity: packing.quantity,
+        displayQuantity: packing.displayQuantity,
+        unitOfMeasure: packing.unitOfMeasure,
         packingUnitPrice: packing.packingUnitPrice,
       });
     }
@@ -433,6 +487,8 @@ export class RecipeService {
         "ProductId" AS productId,
         "ProductName" AS productName,
         "Quantity" AS quantity,
+        COALESCE("DisplayQuantity", "Quantity") AS displayQuantity,
+        "UnitOfMeasure" AS unitOfMeasure,
         "IngredientPrice" AS ingredientPrice
       FROM "RecipeIngredients"
       WHERE "RecipeId" IN (${placeholders})
@@ -455,6 +511,8 @@ export class RecipeService {
         "PackingId" AS packingId,
         "PackingName" AS packingName,
         "Quantity" AS quantity,
+        COALESCE("DisplayQuantity", "Quantity") AS displayQuantity,
+        "UnitOfMeasure" AS unitOfMeasure,
         "UnitPrice" AS packingUnitPrice
       FROM "RecipePackings"
       WHERE "RecipeId" IN (${placeholders})

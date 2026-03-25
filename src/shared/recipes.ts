@@ -4,6 +4,7 @@ export interface IngredientDto {
   productId: string;
   productName: string;
   quantity: number;
+  unitOfMeasure: UnitOfMeasure;
   ingredientPrice: number;
 }
 
@@ -11,17 +12,20 @@ export interface PackingDto {
   packingId: string;
   packingName: string;
   quantity: number;
+  unitOfMeasure: UnitOfMeasure;
   packingUnitPrice: number;
 }
 
 export interface IRecipeIngredientInput {
   ingredientId: string;
   quantity: number;
+  unitOfMeasure: UnitOfMeasure;
 }
 
 export interface IRecipePackingInput {
   packingId: string;
   quantity: number;
+  unitOfMeasure: UnitOfMeasure;
 }
 
 export interface RecipeWriteDto {

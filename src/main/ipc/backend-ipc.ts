@@ -89,6 +89,7 @@ const isIngredientDto = (value: unknown): value is IngredientDto =>
   typeof value.productId === 'string' &&
   typeof value.productName === 'string' &&
   typeof value.quantity === 'number' &&
+  typeof value.unitOfMeasure === 'number' &&
   typeof value.ingredientPrice === 'number';
 
 const isPackingDto = (value: unknown): value is PackingDto =>
@@ -96,6 +97,7 @@ const isPackingDto = (value: unknown): value is PackingDto =>
   typeof value.packingId === 'string' &&
   typeof value.packingName === 'string' &&
   typeof value.quantity === 'number' &&
+  typeof value.unitOfMeasure === 'number' &&
   typeof value.packingUnitPrice === 'number';
 
 const isRecipePayload = (payload: unknown): payload is AddRecipeRequest | UpdateRecipeDto =>

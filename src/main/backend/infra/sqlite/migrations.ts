@@ -80,4 +80,14 @@ export const sqliteMigrations: SqliteMigration[] = [
       CREATE INDEX IF NOT EXISTS "IX_Recipes_GroupId" ON "Recipes" ("GroupId");
     `,
   },
+  {
+    id: '20260325093000_AddRecipeDisplayUnits',
+    sql: `
+      ALTER TABLE "RecipeIngredients" ADD COLUMN "DisplayQuantity" REAL NULL;
+      ALTER TABLE "RecipeIngredients" ADD COLUMN "UnitOfMeasure" INTEGER NULL;
+
+      ALTER TABLE "RecipePackings" ADD COLUMN "DisplayQuantity" REAL NULL;
+      ALTER TABLE "RecipePackings" ADD COLUMN "UnitOfMeasure" INTEGER NULL;
+    `,
+  },
 ];

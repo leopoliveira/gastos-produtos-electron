@@ -25,6 +25,7 @@ const buildRecipePayload = async (payload: ICreateRecipe): Promise<AddRecipeRequ
         productId: ingredient.ingredientId,
         productName: product.name,
         quantity: ingredient.quantity,
+        unitOfMeasure: ingredient.unitOfMeasure,
         ingredientPrice: product.unitPrice,
       };
     }),
@@ -39,6 +40,7 @@ const buildRecipePayload = async (payload: ICreateRecipe): Promise<AddRecipeRequ
         packingId: packing.packingId,
         packingName: packingOption.name,
         quantity: packing.quantity,
+        unitOfMeasure: packing.unitOfMeasure,
         packingUnitPrice: packingOption.packingUnitPrice,
       };
     }),

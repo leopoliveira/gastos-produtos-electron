@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { UnitOfMeasure } from '../../src/shared/unit-of-measure';
 
 const appApiMocks = vi.hoisted(() => ({
   packings: {
@@ -34,7 +35,7 @@ const recipe = {
       ingredientId: 'product-1',
       quantity: 0.5,
       name: 'Chocolate em po',
-      unitOfMeasure: 2,
+      unitOfMeasure: UnitOfMeasure.kg,
       unitPrice: 18.9,
       totalCost: 9.45,
     },
@@ -44,7 +45,7 @@ const recipe = {
       packingId: 'packing-1',
       quantity: 2,
       name: 'Caixa kraft',
-      unitOfMeasure: 6,
+      unitOfMeasure: UnitOfMeasure.kg,
       unitPrice: 0.4,
       totalCost: 0.8,
     },
@@ -78,7 +79,7 @@ describe('RecipeService', () => {
         name: 'Chocolate em po',
         price: 18.9,
         quantity: 1,
-        unitOfMeasure: 2,
+        unitOfMeasure: UnitOfMeasure.kg,
         unitPrice: 18.9,
       },
     ]);
@@ -89,7 +90,7 @@ describe('RecipeService', () => {
         description: 'Caixa para 4 brigadeiros',
         price: 20,
         quantity: 50,
-        unitOfMeasure: 6,
+        unitOfMeasure: UnitOfMeasure.kg,
         packingUnitPrice: 0.4,
       },
     ]);
@@ -108,12 +109,14 @@ describe('RecipeService', () => {
         {
           ingredientId: 'product-1',
           quantity: 0.5,
+          unitOfMeasure: UnitOfMeasure.kg,
         },
       ],
       packings: [
         {
           packingId: 'packing-1',
           quantity: 2,
+          unitOfMeasure: UnitOfMeasure.kg,
         },
       ],
     };
@@ -132,6 +135,7 @@ describe('RecipeService', () => {
           productId: 'product-1',
           productName: 'Chocolate em po',
           quantity: 0.5,
+          unitOfMeasure: UnitOfMeasure.kg,
           ingredientPrice: 18.9,
         },
       ],
@@ -140,6 +144,7 @@ describe('RecipeService', () => {
           packingId: 'packing-1',
           packingName: 'Caixa kraft',
           quantity: 2,
+          unitOfMeasure: UnitOfMeasure.kg,
           packingUnitPrice: 0.4,
         },
       ],
@@ -155,6 +160,7 @@ describe('RecipeService', () => {
           productId: 'product-1',
           productName: 'Chocolate em po',
           quantity: 0.5,
+          unitOfMeasure: UnitOfMeasure.kg,
           ingredientPrice: 18.9,
         },
       ],
@@ -163,6 +169,7 @@ describe('RecipeService', () => {
           packingId: 'packing-1',
           packingName: 'Caixa kraft',
           quantity: 2,
+          unitOfMeasure: UnitOfMeasure.kg,
           packingUnitPrice: 0.4,
         },
       ],
@@ -187,5 +194,73 @@ describe('RecipeService', () => {
     expect(appApiMocks.recipes.getById).toHaveBeenNthCalledWith(1, 'recipe-1');
     expect(appApiMocks.recipes.getById).toHaveBeenNthCalledWith(2, 'recipe-404');
     expect(appApiMocks.recipes.delete).toHaveBeenCalledWith('recipe-1');
+  });
+
+  it('preserves selected units and quantities in recipe payload', async () => {
+    appApiMocks.products.list.mockResolvedValue([
+      {
+        id: 'product-1',
+        name: 'Chocolate em po',
+        price: 25,
+        quantity: 1,
+        unitOfMeasure: UnitOfMeasure.kg,
+        unitPrice: 25,
+      },
+    ]);
+    appApiMocks.packings.list.mockResolvedValue([
+      {
+        id: 'packing-1',
+        name: 'Xarope',
+        description: 'Frasco',
+        price: 15,
+        quantity: 1,
+        unitOfMeasure: UnitOfMeasure.l,
+        packingUnitPrice: 15,
+      },
+    ]);
+    appApiMocks.recipes.create.mockResolvedValue({ recipeId: 'recipe-1' });
+    appApiMocks.recipes.getById.mockResolvedValue(recipe);
+    const { RecipeService } = await import('../../src/renderer/services/recipe-service');
+
+    await RecipeService.createRecipe({
+      name: 'Receita com conversao',
+      description: undefined,
+      quantity: 10,
+      sellingValue: 9.9,
+      groupId: undefined,
+      ingredients: [
+        {
+          ingredientId: 'product-1',
+          quantity: 20,
+          unitOfMeasure: UnitOfMeasure.g,
+        },
+      ],
+      packings: [
+        {
+          packingId: 'packing-1',
+          quantity: 250,
+          unitOfMeasure: UnitOfMeasure.ml,
+        },
+      ],
+    });
+
+    expect(appApiMocks.recipes.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ingredients: [
+          expect.objectContaining({
+            productId: 'product-1',
+            quantity: 20,
+            unitOfMeasure: UnitOfMeasure.g,
+          }),
+        ],
+        packings: [
+          expect.objectContaining({
+            packingId: 'packing-1',
+            quantity: 250,
+            unitOfMeasure: UnitOfMeasure.ml,
+          }),
+        ],
+      }),
+    );
   });
 });

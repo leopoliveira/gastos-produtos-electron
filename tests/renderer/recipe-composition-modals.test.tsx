@@ -87,6 +87,7 @@ describe('recipe composition modals', () => {
     expect(onSubmit).toHaveBeenCalledWith({
       ingredientId: 'product-1',
       quantity: 1.5,
-    });
+      unitOfMeasure: UnitOfMeasure.kg,
+    }, true);
   });
 });

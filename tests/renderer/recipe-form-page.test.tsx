@@ -275,12 +275,14 @@ describe('RecipeFormPage', () => {
           {
             ingredientId: 'product-1',
             quantity: 0.5,
+            unitOfMeasure: UnitOfMeasure.kg,
           },
         ],
         packings: [
           {
             packingId: 'packing-1',
             quantity: 12,
+            unitOfMeasure: UnitOfMeasure.kg,
           },
         ],
       }),
@@ -321,12 +323,14 @@ describe('RecipeFormPage', () => {
           {
             ingredientId: 'product-1',
             quantity: 0.75,
+            unitOfMeasure: UnitOfMeasure.kg,
           },
         ],
         packings: [
           {
             packingId: 'packing-1',
             quantity: 20,
+            unitOfMeasure: UnitOfMeasure.kg,
           },
         ],
       }),
@@ -359,12 +363,14 @@ describe('RecipeFormPage', () => {
           {
             ingredientId: 'product-1',
             quantity: 0.5,
+            unitOfMeasure: UnitOfMeasure.kg,
           },
         ],
         packings: [
           {
             packingId: 'packing-1',
             quantity: 20,
+            unitOfMeasure: UnitOfMeasure.kg,
           },
         ],
       }),

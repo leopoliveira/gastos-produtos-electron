@@ -3,6 +3,11 @@ import { useState } from 'react';
 
 import type { IReadPacking } from '../../../shared/packings';
 import type { IRecipePackingInput } from '../../../shared/recipes';
+import {
+  getCompatibleUnitOfMeasureValues,
+  getUnitOfMeasureLabel,
+  UnitOfMeasure,
+} from '../../../shared/unit-of-measure';
 import { Modal, ModalActions } from '../../components/modal';
 import ui from '../../styles/shared-ui.module.css';
 
@@ -16,6 +21,7 @@ type PackingSelectionModalProps = {
 type PackingFormErrors = {
   packingId?: string;
   quantity?: string;
+  unitOfMeasure?: string;
 };
 
 export const PackingSelectionModal = ({
@@ -26,8 +32,15 @@ export const PackingSelectionModal = ({
 }: PackingSelectionModalProps): React.JSX.Element => {
   const [packingId, setPackingId] = useState(initialValue?.packingId ?? '');
   const [quantity, setQuantity] = useState(initialValue ? String(initialValue.quantity) : '');
+  const [unitOfMeasure, setUnitOfMeasure] = useState<UnitOfMeasure | ''>(
+    initialValue?.unitOfMeasure ?? '',
+  );
   const [formErrors, setFormErrors] = useState<PackingFormErrors>({});
   const isEditing = Boolean(initialValue);
+  const selectedPacking = packings.find((item) => item.id === packingId);
+  const availableUnits = selectedPacking
+    ? getCompatibleUnitOfMeasureValues(selectedPacking.unitOfMeasure)
+    : [];
 
   const validateForm = (): PackingFormErrors => {
     const nextErrors: PackingFormErrors = {};
@@ -39,6 +52,10 @@ export const PackingSelectionModal = ({
     const parsedQuantity = Number(quantity);
     if (packingId && (!quantity.trim() || Number.isNaN(parsedQuantity) || parsedQuantity <= 0)) {
       nextErrors.quantity = 'Informe uma quantidade maior que zero.';
+    }
+
+    if (packingId && unitOfMeasure === '') {
+      nextErrors.unitOfMeasure = 'Selecione uma unidade de medida.';
     }
 
     return nextErrors;
@@ -54,8 +71,9 @@ export const PackingSelectionModal = ({
     setFormErrors({});
     onSubmit(
       {
-      packingId,
-      quantity: Number(quantity),
+        packingId,
+        quantity: Number(quantity),
+        unitOfMeasure: unitOfMeasure as UnitOfMeasure,
       },
       shouldClose,
     );
@@ -88,12 +106,15 @@ export const PackingSelectionModal = ({
             name="packingId"
             onChange={(event) => {
               setPackingId(event.target.value);
+              const nextPacking = packings.find((item) => item.id === event.target.value);
+              setUnitOfMeasure(nextPacking?.unitOfMeasure ?? '');
               setFormErrors((current) => {
-                if (!current.packingId) {
+                if (!current.packingId && !current.unitOfMeasure) {
                   return current;
                 }
                 const next = { ...current };
                 delete next.packingId;
+                delete next.unitOfMeasure;
                 return next;
               });
             }}
@@ -109,6 +130,46 @@ export const PackingSelectionModal = ({
           {formErrors.packingId ? (
             <p className={ui.fieldErrorMessage} id="packing-id-error">
               {formErrors.packingId}
+            </p>
+          ) : null}
+        </label>
+
+        <label className={ui.field}>
+          <span>
+            Unidade de Medida
+            <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
+          </span>
+          <select
+            aria-describedby={formErrors.unitOfMeasure ? 'packing-unit-error' : undefined}
+            aria-invalid={Boolean(formErrors.unitOfMeasure)}
+            className={formErrors.unitOfMeasure ? ui.fieldControlInvalid : undefined}
+            disabled={!packingId}
+            name="unitOfMeasure"
+            onChange={(event) => {
+              setUnitOfMeasure(
+                event.target.value === '' ? '' : (Number(event.target.value) as UnitOfMeasure),
+              );
+              setFormErrors((current) => {
+                if (!current.unitOfMeasure) {
+                  return current;
+                }
+                const next = { ...current };
+                delete next.unitOfMeasure;
+                return next;
+              });
+            }}
+            value={unitOfMeasure}
+          >
+            <option value="">Selecione</option>
+            {availableUnits.map((unit) => (
+              <option key={unit} value={unit}>
+                {getUnitOfMeasureLabel(unit)}
+              </option>
+            ))}
+          </select>
+          {formErrors.unitOfMeasure ? (
+            <p className={ui.fieldErrorMessage} id="packing-unit-error">
+              {formErrors.unitOfMeasure}
             </p>
           ) : null}
         </label>
@@ -158,6 +219,7 @@ export const PackingSelectionModal = ({
             }
             setPackingId('');
             setQuantity('');
+            setUnitOfMeasure('');
           }}
           secondaryConfirmLabel={isEditing ? undefined : 'Salvar e Adicionar'}
           secondaryConfirmTooltip={

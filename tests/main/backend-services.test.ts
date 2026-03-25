@@ -261,6 +261,7 @@ describe('main backend services', () => {
           productId: product.productId,
           productName: 'Chocolate em po',
           quantity: 0.5,
+          unitOfMeasure: UnitOfMeasure.kg,
           ingredientPrice: 18.9,
         },
       ],
@@ -269,6 +270,7 @@ describe('main backend services', () => {
           packingId: packing.packingId,
           packingName: 'Caixa kraft',
           quantity: 2,
+          unitOfMeasure: UnitOfMeasure.kg,
           packingUnitPrice: 0.4,
         },
       ],
@@ -318,6 +320,7 @@ describe('main backend services', () => {
           productId: product.productId,
           productName: 'Chocolate em po',
           quantity: 1,
+          unitOfMeasure: UnitOfMeasure.kg,
           ingredientPrice: 18.9,
         },
       ],
@@ -372,6 +375,7 @@ describe('main backend services', () => {
           productId: product.productId,
           productName: 'Leite condensado',
           quantity: 1,
+          unitOfMeasure: UnitOfMeasure.un,
           ingredientPrice: 8,
         },
       ],
@@ -380,6 +384,7 @@ describe('main backend services', () => {
           packingId: packing.packingId,
           packingName: 'Caixa branca',
           quantity: 1,
+          unitOfMeasure: UnitOfMeasure.kg,
           packingUnitPrice: 1,
         },
       ],
@@ -408,7 +413,7 @@ describe('main backend services', () => {
             name: 'Leite condensado',
             unitPrice: 8,
             totalCost: 8,
-            unitOfMeasure: UnitOfMeasure.kg,
+            unitOfMeasure: UnitOfMeasure.un,
           }),
         ],
         packings: [
@@ -417,11 +422,95 @@ describe('main backend services', () => {
             name: 'Caixa branca',
             unitPrice: 1,
             totalCost: 1,
-            unitOfMeasure: UnitOfMeasure.un,
+            unitOfMeasure: UnitOfMeasure.kg,
           }),
         ],
       }),
     );
+  });
+
+  it('preserves user-selected units on recipe read while calculating with normalized units', async () => {
+    const milk = await services.products.create({
+      name: 'Leite',
+      price: 10,
+      quantity: 1,
+      unitOfMeasure: UnitOfMeasure.l,
+    });
+    const sugar = await services.products.create({
+      name: 'Acucar',
+      price: 6,
+      quantity: 1,
+      unitOfMeasure: UnitOfMeasure.kg,
+    });
+    const bottle = await services.packings.create({
+      name: 'Garrafa',
+      description: 'Garrafa 500ml',
+      price: 4,
+      quantity: 2,
+      unitOfMeasure: UnitOfMeasure.l,
+    });
+
+    const recipe = await services.recipes.create({
+      name: 'Vitamina',
+      description: 'Receita com conversao',
+      quantity: 1,
+      sellingValue: 12,
+      ingredients: [
+        {
+          productId: milk.productId,
+          productName: 'Leite',
+          quantity: 100,
+          unitOfMeasure: UnitOfMeasure.ml,
+          ingredientPrice: 10,
+        },
+        {
+          productId: sugar.productId,
+          productName: 'Acucar',
+          quantity: 20,
+          unitOfMeasure: UnitOfMeasure.g,
+          ingredientPrice: 6,
+        },
+      ],
+      packings: [
+        {
+          packingId: bottle.packingId,
+          packingName: 'Garrafa',
+          quantity: 250,
+          unitOfMeasure: UnitOfMeasure.ml,
+          packingUnitPrice: 2,
+        },
+      ],
+    });
+
+    const loaded = await services.recipes.getById(recipe.recipeId);
+
+    expect(loaded.ingredients).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          ingredientId: milk.productId,
+          quantity: 100,
+          unitOfMeasure: UnitOfMeasure.ml,
+          totalCost: 1,
+        }),
+        expect.objectContaining({
+          ingredientId: sugar.productId,
+          quantity: 20,
+          unitOfMeasure: UnitOfMeasure.g,
+          totalCost: 0.12,
+        }),
+      ]),
+    );
+    expect(loaded.packings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          packingId: bottle.packingId,
+          quantity: 250,
+          unitOfMeasure: UnitOfMeasure.ml,
+          totalCost: 0.5,
+        }),
+      ]),
+    );
+    expect(loaded.totalCost).toBeCloseTo(1.62, 8);
   });
 
   it('allows recipes without group and with empty ingredient and packing lists', async () => {

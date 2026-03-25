@@ -3,6 +3,11 @@ import { useState } from 'react';
 
 import type { IReadProduct } from '../../../shared/products';
 import type { IRecipeIngredientInput } from '../../../shared/recipes';
+import {
+  getCompatibleUnitOfMeasureValues,
+  getUnitOfMeasureLabel,
+  UnitOfMeasure,
+} from '../../../shared/unit-of-measure';
 import { Modal, ModalActions } from '../../components/modal';
 import ui from '../../styles/shared-ui.module.css';
 
@@ -16,6 +21,7 @@ type IngredientFormModalProps = {
 type IngredientFormErrors = {
   ingredientId?: string;
   quantity?: string;
+  unitOfMeasure?: string;
 };
 
 export const IngredientFormModal = ({
@@ -26,8 +32,15 @@ export const IngredientFormModal = ({
 }: IngredientFormModalProps): React.JSX.Element => {
   const [ingredientId, setIngredientId] = useState(initialValue?.ingredientId ?? '');
   const [quantity, setQuantity] = useState(initialValue ? String(initialValue.quantity) : '');
+  const [unitOfMeasure, setUnitOfMeasure] = useState<UnitOfMeasure | ''>(
+    initialValue?.unitOfMeasure ?? '',
+  );
   const [formErrors, setFormErrors] = useState<IngredientFormErrors>({});
   const isEditing = Boolean(initialValue);
+  const selectedIngredient = ingredients.find((item) => item.id === ingredientId);
+  const availableUnits = selectedIngredient
+    ? getCompatibleUnitOfMeasureValues(selectedIngredient.unitOfMeasure)
+    : [];
 
   const validateForm = (): IngredientFormErrors => {
     const nextErrors: IngredientFormErrors = {};
@@ -39,6 +52,10 @@ export const IngredientFormModal = ({
     const parsedQuantity = Number(quantity);
     if (ingredientId && (!quantity.trim() || Number.isNaN(parsedQuantity) || parsedQuantity <= 0)) {
       nextErrors.quantity = 'Informe uma quantidade maior que zero.';
+    }
+
+    if (ingredientId && unitOfMeasure === '') {
+      nextErrors.unitOfMeasure = 'Selecione uma unidade de medida.';
     }
 
     return nextErrors;
@@ -54,8 +71,9 @@ export const IngredientFormModal = ({
     setFormErrors({});
     onSubmit(
       {
-      ingredientId,
-      quantity: Number(quantity),
+        ingredientId,
+        quantity: Number(quantity),
+        unitOfMeasure: unitOfMeasure as UnitOfMeasure,
       },
       shouldClose,
     );
@@ -88,12 +106,15 @@ export const IngredientFormModal = ({
             name="ingredientId"
             onChange={(event) => {
               setIngredientId(event.target.value);
+              const nextIngredient = ingredients.find((item) => item.id === event.target.value);
+              setUnitOfMeasure(nextIngredient?.unitOfMeasure ?? '');
               setFormErrors((current) => {
-                if (!current.ingredientId) {
+                if (!current.ingredientId && !current.unitOfMeasure) {
                   return current;
                 }
                 const next = { ...current };
                 delete next.ingredientId;
+                delete next.unitOfMeasure;
                 return next;
               });
             }}
@@ -109,6 +130,46 @@ export const IngredientFormModal = ({
           {formErrors.ingredientId ? (
             <p className={ui.fieldErrorMessage} id="ingredient-id-error">
               {formErrors.ingredientId}
+            </p>
+          ) : null}
+        </label>
+
+        <label className={ui.field}>
+          <span>
+            Unidade de Medida
+            <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
+          </span>
+          <select
+            aria-describedby={formErrors.unitOfMeasure ? 'ingredient-unit-error' : undefined}
+            aria-invalid={Boolean(formErrors.unitOfMeasure)}
+            className={formErrors.unitOfMeasure ? ui.fieldControlInvalid : undefined}
+            disabled={!ingredientId}
+            name="unitOfMeasure"
+            onChange={(event) => {
+              setUnitOfMeasure(
+                event.target.value === '' ? '' : (Number(event.target.value) as UnitOfMeasure),
+              );
+              setFormErrors((current) => {
+                if (!current.unitOfMeasure) {
+                  return current;
+                }
+                const next = { ...current };
+                delete next.unitOfMeasure;
+                return next;
+              });
+            }}
+            value={unitOfMeasure}
+          >
+            <option value="">Selecione</option>
+            {availableUnits.map((unit) => (
+              <option key={unit} value={unit}>
+                {getUnitOfMeasureLabel(unit)}
+              </option>
+            ))}
+          </select>
+          {formErrors.unitOfMeasure ? (
+            <p className={ui.fieldErrorMessage} id="ingredient-unit-error">
+              {formErrors.unitOfMeasure}
             </p>
           ) : null}
         </label>
@@ -158,6 +219,7 @@ export const IngredientFormModal = ({
             }
             setIngredientId('');
             setQuantity('');
+            setUnitOfMeasure('');
           }}
           secondaryConfirmLabel={isEditing ? undefined : 'Salvar e Adicionar'}
           secondaryConfirmTooltip={

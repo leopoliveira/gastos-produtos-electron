@@ -34,6 +34,8 @@ export interface RecipeIngredientRecord {
   productId: string;
   productName: string;
   quantity: number;
+  displayQuantity: number;
+  unitOfMeasure?: UnitOfMeasure;
 }
 
 export interface RecipePackingRecord {
@@ -41,6 +43,8 @@ export interface RecipePackingRecord {
   packingName: string;
   packingUnitPrice: number;
   quantity: number;
+  displayQuantity: number;
+  unitOfMeasure?: UnitOfMeasure;
 }
 
 export interface RecipeRecord extends BaseRecord {

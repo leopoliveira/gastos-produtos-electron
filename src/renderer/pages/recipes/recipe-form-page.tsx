@@ -7,13 +7,15 @@ import type { ICreateGroup, IReadGroup } from '../../../shared/groups';
 import type { IReadPacking } from '../../../shared/packings';
 import type {
   ICreateRecipe,
+  IRecipeIngredient,
   IRecipeIngredientInput,
+  IRecipePacking,
   IRecipePackingInput,
 } from '../../../shared/recipes';
 import type { IReadProduct } from '../../../shared/products';
 import { amountFromCurrencyDigitString, currencyDigitStringFromAmount } from '../../../shared/currency-input';
 import { formatCurrency } from '../../../shared/format';
-import { getUnitOfMeasureLabel } from '../../../shared/unit-of-measure';
+import { convertQuantityBetweenUnits, getUnitOfMeasureLabel } from '../../../shared/unit-of-measure';
 import { GroupService } from '../../services/group-service';
 import { PackingService } from '../../services/packing-service';
 import { ProductService } from '../../services/product-service';
@@ -88,7 +90,7 @@ const buildIngredientLabel = (item: IRecipeIngredientInput, options: IReadProduc
     return 'Item removido';
   }
 
-  return `${option.name} • ${item.quantity} ${getUnitOfMeasureLabel(option.unitOfMeasure)}`;
+  return `${option.name} • ${item.quantity} ${getUnitOfMeasureLabel(item.unitOfMeasure)}`;
 };
 
 const buildPackingLabel = (item: IRecipePackingInput, options: IReadPacking[]): string => {
@@ -97,7 +99,7 @@ const buildPackingLabel = (item: IRecipePackingInput, options: IReadPacking[]): 
     return 'Item removido';
   }
 
-  return `${option.name} • ${item.quantity} ${getUnitOfMeasureLabel(option.unitOfMeasure)}`;
+  return `${option.name} • ${item.quantity} ${getUnitOfMeasureLabel(item.unitOfMeasure)}`;
 };
 
 const resolveGroupId = (currentGroupId: string | undefined, groups: IReadGroup[]): string => {
@@ -176,15 +178,17 @@ export const RecipeFormPage = (): React.JSX.Element => {
             groupId: resolveGroupId(recipe.groupId, loadedGroups),
           });
           setIngredients(
-            recipe.ingredients.map((ingredient: { ingredientId: string; quantity: number }) => ({
+            recipe.ingredients.map((ingredient: IRecipeIngredient) => ({
               ingredientId: ingredient.ingredientId,
               quantity: ingredient.quantity,
+              unitOfMeasure: ingredient.unitOfMeasure,
             })),
           );
           setPackings(
-            recipe.packings.map((packing: { packingId: string; quantity: number }) => ({
+            recipe.packings.map((packing: IRecipePacking) => ({
               packingId: packing.packingId,
               quantity: packing.quantity,
+              unitOfMeasure: packing.unitOfMeasure,
             })),
           );
           return;
@@ -217,11 +221,27 @@ export const RecipeFormPage = (): React.JSX.Element => {
   const sellingValue = amountFromCurrencyDigitString(formState.sellingValueDigits);
   const estimatedIngredientCost = ingredients.reduce((sum, ingredient) => {
     const source = ingredientsOptions.find((option) => option.id === ingredient.ingredientId);
-    return sum + (source?.unitPrice ?? 0) * ingredient.quantity;
+    if (!source) {
+      return sum;
+    }
+    const quantityInSourceUnit = convertQuantityBetweenUnits(
+      ingredient.quantity,
+      ingredient.unitOfMeasure,
+      source.unitOfMeasure,
+    );
+    return sum + source.unitPrice * quantityInSourceUnit;
   }, 0);
   const estimatedPackingCost = packings.reduce((sum, packing) => {
     const source = packingOptions.find((option) => option.id === packing.packingId);
-    return sum + (source?.packingUnitPrice ?? 0) * packing.quantity;
+    if (!source) {
+      return sum;
+    }
+    const quantityInSourceUnit = convertQuantityBetweenUnits(
+      packing.quantity,
+      packing.unitOfMeasure,
+      source.unitOfMeasure,
+    );
+    return sum + source.packingUnitPrice * quantityInSourceUnit;
   }, 0);
   const estimatedTotalCost = estimatedIngredientCost + estimatedPackingCost;
   const estimatedUnitCost = quantity > 0 ? estimatedTotalCost / quantity : 0;

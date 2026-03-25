@@ -62,6 +62,11 @@ describe('build and release configuration', () => {
     ).toEqual(
       expect.arrayContaining([
         {
+          name: 'auto-unpack-natives',
+          config: {},
+          fusesConfig: undefined,
+        },
+        {
           name: 'vite',
           config: {
             build: [

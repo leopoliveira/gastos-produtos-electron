@@ -28,6 +28,13 @@ export const appRoutes: AppRouteDefinition[] = [
     showInNavigation: true,
   },
   {
+    path: '/recipes',
+    label: 'Receitas',
+    description: 'Listagem de receitas com filtros, custos e acoes principais.',
+    showInNavigation: true,
+    element: <RecipesPage />,
+  },
+  {
     path: '/products',
     label: 'Produtos',
     description: 'Base da tela de materia-prima. O CRUD sera implementado na proxima etapa.',
@@ -40,13 +47,6 @@ export const appRoutes: AppRouteDefinition[] = [
     description: 'CRUD de embalagens com listagem, filtros, modais e custo unitario.',
     showInNavigation: true,
     element: <PackingsPage />,
-  },
-  {
-    path: '/recipes',
-    label: 'Receitas',
-    description: 'Listagem de receitas com filtros, custos e acoes principais.',
-    showInNavigation: true,
-    element: <RecipesPage />,
   },
   {
     path: '/recipes/new',

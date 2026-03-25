@@ -126,6 +126,13 @@
   color: #2d1c12;
 }
 
+.field input[readonly] {
+  background: rgba(120, 79, 51, 0.08);
+  color: #7b5a47;
+  border-color: rgba(120, 79, 51, 0.14);
+  cursor: not-allowed;
+}
+
 .textareaLarge {
   min-height: 110px;
   resize: vertical;

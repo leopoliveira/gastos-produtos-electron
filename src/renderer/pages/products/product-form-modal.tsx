@@ -97,19 +97,6 @@ export const ProductFormModal = ({
           </label>
 
           <label className={ui.field}>
-            <span>Preço</span>
-            <CurrencyMaskedInput
-              digits={formState.priceDigits}
-              name="price"
-              onDigitsChange={(priceDigits) =>
-                setFormState((currentState) => ({ ...currentState, priceDigits }))
-              }
-            />
-          </label>
-        </div>
-
-        <div className={ui.formGrid}>
-          <label className={ui.field}>
             <span>Unidade de Medida</span>
             <select
               name="unitOfMeasure"
@@ -122,6 +109,19 @@ export const ProductFormModal = ({
                 </option>
               ))}
             </select>
+          </label>
+        </div>
+
+        <div className={ui.formGrid}>
+          <label className={ui.field}>
+            <span>Preço</span>
+            <CurrencyMaskedInput
+              digits={formState.priceDigits}
+              name="price"
+              onDigitsChange={(priceDigits) =>
+                setFormState((currentState) => ({ ...currentState, priceDigits }))
+              }
+            />
           </label>
 
           <label className={ui.field}>

@@ -149,6 +149,7 @@ export const IngredientFormModal = ({
         <ModalActions
           confirmButtonType="submit"
           confirmLabel="Salvar"
+          confirmTooltip="Adiciona o item e fecha a modal"
           onCancel={onClose}
           onSecondaryConfirm={() => {
             const didSubmit = submitForm(false);
@@ -159,6 +160,11 @@ export const IngredientFormModal = ({
             setQuantity('');
           }}
           secondaryConfirmLabel={isEditing ? undefined : 'Salvar e Adicionar'}
+          secondaryConfirmTooltip={
+            isEditing
+              ? undefined
+              : 'Adiciona o item e abre a modal novamente para nova seleção'
+          }
         />
       </form>
     </Modal>

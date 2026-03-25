@@ -10,6 +10,8 @@ export type CurrencyMaskedInputProps = {
   onDigitsChange: (digits: string) => void;
   autoComplete?: string;
   required?: boolean;
+  ariaInvalid?: boolean;
+  ariaDescribedBy?: string;
 };
 
 export const CurrencyMaskedInput = ({
@@ -20,6 +22,8 @@ export const CurrencyMaskedInput = ({
   onDigitsChange,
   autoComplete = 'off',
   required = false,
+  ariaInvalid = false,
+  ariaDescribedBy,
 }: CurrencyMaskedInputProps): React.JSX.Element => {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const nextDigits = event.target.value.replace(/\D/g, '');
@@ -29,6 +33,8 @@ export const CurrencyMaskedInput = ({
   return (
     <input
       autoComplete={autoComplete}
+      aria-describedby={ariaDescribedBy}
+      aria-invalid={ariaInvalid}
       className={className}
       id={id}
       inputMode="numeric"

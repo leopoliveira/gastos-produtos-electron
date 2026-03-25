@@ -142,23 +142,24 @@ describe('ProductsPage', () => {
         name: 'Acucar refinado',
         quantity: 1,
         price: 4.5,
-        unitOfMeasure: UnitOfMeasure.un,
+        unitOfMeasure: UnitOfMeasure.mg,
       }),
     );
     expect(await screen.findByRole('cell', { name: 'Acucar refinado' })).toBeInTheDocument();
     expect(sonnerMocks.toastSuccessMock).toHaveBeenCalledWith('Matéria Prima criada com sucesso!');
   });
 
-  it('blocks invalid product submission and shows the error toast', async () => {
+  it('blocks invalid product submission and highlights invalid fields', async () => {
     render(<ProductsPage />);
 
     await screen.findByRole('cell', { name: 'Chocolate em po' });
     fireEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
-    expect(sonnerMocks.toastErrorMock).toHaveBeenCalledWith(
-      'Preencha nome, quantidade e preço com valores válidos.',
-    );
+    expect(productServiceMocks.createProductMock).not.toHaveBeenCalled();
+    expect(screen.getByText('Informe o nome da matéria-prima.')).toBeInTheDocument();
+    expect(screen.getByText('Informe uma quantidade maior que zero.')).toBeInTheDocument();
+    expect(screen.getByText('Informe um preço maior que zero.')).toBeInTheDocument();
     expect(screen.getByRole('dialog', { name: 'Adicionar Matéria Prima' })).toBeInTheDocument();
   });
 

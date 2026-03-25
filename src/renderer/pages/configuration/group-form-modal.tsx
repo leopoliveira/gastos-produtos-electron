@@ -48,7 +48,7 @@ export const GroupFormModal = ({
     event.preventDefault();
 
     if (!formState.name.trim()) {
-      setNameError('Nome é obrigatório');
+      setNameError('Informe o nome do grupo.');
       return;
     }
 
@@ -65,16 +65,27 @@ export const GroupFormModal = ({
       onClose={onClose}
     >
       <form className={ui.form} onSubmit={handleSubmit}>
+        <p className={ui.requiredHint}>* Campos obrigatórios</p>
+
         <label className={ui.field}>
-          <span>Nome</span>
+          <span>
+            Nome
+            <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
+          </span>
           <input
-            aria-invalid={nameError ? 'true' : 'false'}
+            aria-describedby={nameError ? 'config-group-name-error' : undefined}
+            aria-invalid={Boolean(nameError)}
+            className={nameError ? ui.fieldControlInvalid : undefined}
             name="name"
             onChange={handleFieldChange('name')}
             type="text"
             value={formState.name}
           />
-          {nameError ? <small className={ui.errorText}>{nameError}</small> : null}
+          {nameError ? (
+            <p className={ui.fieldErrorMessage} id="config-group-name-error">
+              {nameError}
+            </p>
+          ) : null}
         </label>
 
         <label className={ui.field}>

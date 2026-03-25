@@ -1,6 +1,5 @@
 import type React from 'react';
 import { useState } from 'react';
-import { toast } from 'sonner';
 
 import type { IReadProduct } from '../../../shared/products';
 import type { IRecipeIngredientInput } from '../../../shared/recipes';
@@ -14,6 +13,11 @@ type IngredientFormModalProps = {
   onSubmit: (value: IRecipeIngredientInput) => void;
 };
 
+type IngredientFormErrors = {
+  ingredientId?: string;
+  quantity?: string;
+};
+
 export const IngredientFormModal = ({
   ingredients,
   initialValue,
@@ -22,19 +26,36 @@ export const IngredientFormModal = ({
 }: IngredientFormModalProps): React.JSX.Element => {
   const [ingredientId, setIngredientId] = useState(initialValue?.ingredientId ?? '');
   const [quantity, setQuantity] = useState(initialValue ? String(initialValue.quantity) : '');
+  const [formErrors, setFormErrors] = useState<IngredientFormErrors>({});
+
+  const validateForm = (): IngredientFormErrors => {
+    const nextErrors: IngredientFormErrors = {};
+
+    if (!ingredientId) {
+      nextErrors.ingredientId = 'Selecione uma matéria-prima.';
+    }
+
+    const parsedQuantity = Number(quantity);
+    if (ingredientId && (!quantity.trim() || Number.isNaN(parsedQuantity) || parsedQuantity <= 0)) {
+      nextErrors.quantity = 'Informe uma quantidade maior que zero.';
+    }
+
+    return nextErrors;
+  };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const parsedQuantity = Number(quantity);
-    if (!ingredientId || parsedQuantity <= 0) {
-      toast.error('Selecione uma matéria-prima e informe uma quantidade válida.');
+    const nextErrors = validateForm();
+    if (Object.keys(nextErrors).length > 0) {
+      setFormErrors(nextErrors);
       return;
     }
 
+    setFormErrors({});
     onSubmit({
       ingredientId,
-      quantity: parsedQuantity,
+      quantity: Number(quantity),
     });
   };
 
@@ -45,11 +66,29 @@ export const IngredientFormModal = ({
       onClose={onClose}
     >
       <form className={ui.form} onSubmit={handleSubmit}>
+        <p className={ui.requiredHint}>* Campos obrigatórios</p>
+
         <label className={ui.field}>
-          <span>Matéria Prima</span>
+          <span>
+            Matéria Prima
+            <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
+          </span>
           <select
+            aria-describedby={formErrors.ingredientId ? 'ingredient-id-error' : undefined}
+            aria-invalid={Boolean(formErrors.ingredientId)}
+            className={formErrors.ingredientId ? ui.fieldControlInvalid : undefined}
             name="ingredientId"
-            onChange={(event) => setIngredientId(event.target.value)}
+            onChange={(event) => {
+              setIngredientId(event.target.value);
+              setFormErrors((current) => {
+                if (!current.ingredientId) {
+                  return current;
+                }
+                const next = { ...current };
+                delete next.ingredientId;
+                return next;
+              });
+            }}
             value={ingredientId}
           >
             <option value="">Selecione</option>
@@ -59,18 +98,44 @@ export const IngredientFormModal = ({
               </option>
             ))}
           </select>
+          {formErrors.ingredientId ? (
+            <p className={ui.fieldErrorMessage} id="ingredient-id-error">
+              {formErrors.ingredientId}
+            </p>
+          ) : null}
         </label>
 
         <label className={ui.field}>
-          <span>Quantidade</span>
+          <span>
+            Quantidade
+            <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
+          </span>
           <input
+            aria-describedby={formErrors.quantity ? 'ingredient-quantity-error' : undefined}
+            aria-invalid={Boolean(formErrors.quantity)}
+            className={formErrors.quantity ? ui.fieldControlInvalid : undefined}
             min="0"
             name="quantity"
-            onChange={(event) => setQuantity(event.target.value)}
+            onChange={(event) => {
+              setQuantity(event.target.value);
+              setFormErrors((current) => {
+                if (!current.quantity) {
+                  return current;
+                }
+                const next = { ...current };
+                delete next.quantity;
+                return next;
+              });
+            }}
             step="0.01"
             type="number"
             value={quantity}
           />
+          {formErrors.quantity ? (
+            <p className={ui.fieldErrorMessage} id="ingredient-quantity-error">
+              {formErrors.quantity}
+            </p>
+          ) : null}
         </label>
 
         <ModalActions confirmButtonType="submit" confirmLabel="Salvar" onCancel={onClose} />

@@ -162,7 +162,7 @@ describe('RecipeFormPage', () => {
     packingServiceMocks.getAllPackingsDtoMock.mockResolvedValue(packingOptions);
   });
 
-  it('blocks invalid submission with the required validation message', async () => {
+  it('blocks invalid submission and shows field-level validation messages', async () => {
     groupServiceMocks.getAllGroupsMock.mockResolvedValue([]);
     recipeServiceMocks.getRecipeByIdMock.mockResolvedValue(undefined);
 
@@ -171,9 +171,28 @@ describe('RecipeFormPage', () => {
     await screen.findByRole('heading', { name: 'Nova Receita' });
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
-    expect(sonnerMocks.toastErrorMock).toHaveBeenCalledWith(
-      'Preencha todos os campos obrigatórios, incluindo o grupo.',
-    );
+    expect(recipeServiceMocks.createRecipeMock).not.toHaveBeenCalled();
+    expect(screen.getByText('Informe o nome da receita.')).toBeInTheDocument();
+    expect(screen.getByText('Informe uma quantidade produzida maior que zero.')).toBeInTheDocument();
+    expect(screen.getByText('Informe um preço de venda maior que zero.')).toBeInTheDocument();
+    expect(screen.getByText('Selecione um grupo para a receita.')).toBeInTheDocument();
+    expect(screen.getByText('Adicione ao menos uma matéria-prima.')).toBeInTheDocument();
+  });
+
+  it('validates group modal fields before creating a group', async () => {
+    groupServiceMocks.getAllGroupsMock.mockResolvedValue([]);
+    recipeServiceMocks.getRecipeByIdMock.mockResolvedValue(undefined);
+
+    renderRecipeFormPage('/recipes/new');
+
+    await screen.findByRole('heading', { name: 'Nova Receita' });
+    fireEvent.click(screen.getByRole('button', { name: 'Criar Grupo' }));
+    const groupDialog = screen.getByRole('dialog', { name: 'Novo Grupo' });
+
+    fireEvent.click(within(groupDialog).getByRole('button', { name: 'Salvar' }));
+
+    expect(groupServiceMocks.createGroupMock).not.toHaveBeenCalled();
+    expect(within(groupDialog).getByText('Informe o nome do grupo.')).toBeInTheDocument();
   });
 
   it('creates a recipe with inline group creation and composition items', async () => {
@@ -204,10 +223,16 @@ describe('RecipeFormPage', () => {
     fireEvent.change(within(groupDialog).getByRole('textbox', { name: 'Nome' }), {
       target: { value: ' Doces finos ' },
     });
+    fireEvent.change(within(groupDialog).getByRole('textbox', { name: 'Descrição' }), {
+      target: { value: ' Grupo para receitas premium ' },
+    });
     fireEvent.click(within(groupDialog).getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() =>
-      expect(groupServiceMocks.createGroupMock).toHaveBeenCalledWith({ name: 'Doces finos' }),
+      expect(groupServiceMocks.createGroupMock).toHaveBeenCalledWith({
+        name: 'Doces finos',
+        description: 'Grupo para receitas premium',
+      }),
     );
     expect(sonnerMocks.toastSuccessMock).toHaveBeenCalledWith('Grupo criado com sucesso!');
 

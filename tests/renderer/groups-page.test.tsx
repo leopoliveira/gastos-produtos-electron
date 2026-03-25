@@ -85,7 +85,7 @@ describe('GroupsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Adicionar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
-    expect(screen.getByText('Nome é obrigatório')).toBeInTheDocument();
+    expect(screen.getByText('Informe o nome do grupo.')).toBeInTheDocument();
     expect(groupServiceMocks.createGroupMock).not.toHaveBeenCalled();
   });
 

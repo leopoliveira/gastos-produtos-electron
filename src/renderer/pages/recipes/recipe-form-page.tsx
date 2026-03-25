@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import type { IReadGroup } from '../../../shared/groups';
+import type { ICreateGroup, IReadGroup } from '../../../shared/groups';
 import type { IReadPacking } from '../../../shared/packings';
 import type {
   ICreateRecipe,
@@ -33,6 +33,14 @@ type RecipeFormState = {
   groupId: string;
 };
 
+type RecipeFormErrors = {
+  name?: string;
+  quantity?: string;
+  sellingValueDigits?: string;
+  groupId?: string;
+  ingredients?: string;
+};
+
 const emptyFormState: RecipeFormState = {
   name: '',
   description: '',
@@ -49,13 +57,6 @@ const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
 
   return fallbackMessage;
 };
-
-const isRecipePayloadValid = (payload: ICreateRecipe): boolean =>
-  Boolean(payload.name.trim()) &&
-  payload.quantity > 0 &&
-  payload.sellingValue > 0 &&
-  payload.ingredients.length > 0 &&
-  Boolean(payload.groupId);
 
 const upsertIngredient = (
   items: IRecipeIngredientInput[],
@@ -118,6 +119,7 @@ export const RecipeFormPage = (): React.JSX.Element => {
   const isEditing = Boolean(recipeId);
 
   const [formState, setFormState] = useState<RecipeFormState>(emptyFormState);
+  const [formErrors, setFormErrors] = useState<RecipeFormErrors>({});
   const [groups, setGroups] = useState<IReadGroup[]>([]);
   const [ingredientsOptions, setIngredientsOptions] = useState<IReadProduct[]>([]);
   const [packingOptions, setPackingOptions] = useState<IReadPacking[]>([]);
@@ -234,7 +236,44 @@ export const RecipeFormPage = (): React.JSX.Element => {
         ...currentState,
         [field]: event.target.value,
       }));
+      if (field === 'description') {
+        return;
+      }
+      setFormErrors((currentErrors) => {
+        if (!currentErrors[field]) {
+          return currentErrors;
+        }
+        const nextErrors = { ...currentErrors };
+        delete nextErrors[field];
+        return nextErrors;
+      });
     };
+
+  const validateForm = (): RecipeFormErrors => {
+    const nextErrors: RecipeFormErrors = {};
+
+    if (!formState.name.trim()) {
+      nextErrors.name = 'Informe o nome da receita.';
+    }
+
+    if (!(quantity > 0)) {
+      nextErrors.quantity = 'Informe uma quantidade produzida maior que zero.';
+    }
+
+    if (!(sellingValue > 0)) {
+      nextErrors.sellingValueDigits = 'Informe um preço de venda maior que zero.';
+    }
+
+    if (!formState.groupId) {
+      nextErrors.groupId = 'Selecione um grupo para a receita.';
+    }
+
+    if (!ingredients.length) {
+      nextErrors.ingredients = 'Adicione ao menos uma matéria-prima.';
+    }
+
+    return nextErrors;
+  };
 
   const closeIngredientModal = () => {
     setIsIngredientModalOpen(false);
@@ -259,10 +298,12 @@ export const RecipeFormPage = (): React.JSX.Element => {
       packings,
     };
 
-    if (!isRecipePayloadValid(payload)) {
-      toast.error('Preencha todos os campos obrigatórios, incluindo o grupo.');
+    const nextErrors = validateForm();
+    if (Object.keys(nextErrors).length > 0) {
+      setFormErrors(nextErrors);
       return;
     }
+    setFormErrors({});
 
     setSaving(true);
 
@@ -283,14 +324,9 @@ export const RecipeFormPage = (): React.JSX.Element => {
     }
   };
 
-  const handleCreateGroup = async (name: string) => {
-    if (!name) {
-      toast.error('Informe um nome válido para o grupo.');
-      return;
-    }
-
+  const handleCreateGroup = async (payload: ICreateGroup) => {
     try {
-      await GroupService.createGroup({ name });
+      await GroupService.createGroup(payload);
       const loadedGroups = await GroupService.getAllGroups();
       setGroups(loadedGroups);
       setFormState((currentState) => ({
@@ -351,16 +387,28 @@ export const RecipeFormPage = (): React.JSX.Element => {
       </header>
 
       <form className={styles.recipeFormPage} onSubmit={handleSubmit}>
+        <p className={ui.requiredHint}>* Campos obrigatórios</p>
         <section className={`${styles.sectionPanel} ${styles.section}`}>
           <div className={styles.grid}>
             <label className={`${ui.field} ${styles.fieldWide}`}>
-              <span>Nome</span>
+              <span>
+                Nome
+                <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
+              </span>
               <input
+                aria-describedby={formErrors.name ? 'recipe-name-error' : undefined}
+                aria-invalid={Boolean(formErrors.name)}
+                className={formErrors.name ? ui.fieldControlInvalid : undefined}
                 name="name"
                 onChange={handleFieldChange('name')}
                 type="text"
                 value={formState.name}
               />
+              {formErrors.name ? (
+                <p className={ui.fieldErrorMessage} id="recipe-name-error">
+                  {formErrors.name}
+                </p>
+              ) : null}
             </label>
 
             <label className={`${ui.field} ${styles.fieldWide}`}>
@@ -375,8 +423,14 @@ export const RecipeFormPage = (): React.JSX.Element => {
 
             <div className={`${ui.formGrid} ${styles.fieldWide}`}>
               <label className={ui.field}>
-                <span>Quantidade Produzida</span>
+                <span>
+                  Quantidade Produzida
+                  <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
+                </span>
                 <input
+                  aria-describedby={formErrors.quantity ? 'recipe-quantity-error' : undefined}
+                  aria-invalid={Boolean(formErrors.quantity)}
+                  className={formErrors.quantity ? ui.fieldControlInvalid : undefined}
                   min="0"
                   name="quantity"
                   onChange={handleFieldChange('quantity')}
@@ -384,17 +438,41 @@ export const RecipeFormPage = (): React.JSX.Element => {
                   type="number"
                   value={formState.quantity}
                 />
+                {formErrors.quantity ? (
+                  <p className={ui.fieldErrorMessage} id="recipe-quantity-error">
+                    {formErrors.quantity}
+                  </p>
+                ) : null}
               </label>
 
               <label className={ui.field}>
-                <span>Preço de Venda da Unidade</span>
+                <span>
+                  Preço de Venda da Unidade
+                  <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
+                </span>
                 <CurrencyMaskedInput
+                  ariaDescribedBy={formErrors.sellingValueDigits ? 'recipe-selling-value-error' : undefined}
+                  ariaInvalid={Boolean(formErrors.sellingValueDigits)}
+                  className={formErrors.sellingValueDigits ? ui.fieldControlInvalid : undefined}
                   digits={formState.sellingValueDigits}
                   name="sellingValue"
-                  onDigitsChange={(sellingValueDigits) =>
-                    setFormState((currentState) => ({ ...currentState, sellingValueDigits }))
-                  }
+                  onDigitsChange={(sellingValueDigits) => {
+                    setFormState((currentState) => ({ ...currentState, sellingValueDigits }));
+                    setFormErrors((currentErrors) => {
+                      if (!currentErrors.sellingValueDigits) {
+                        return currentErrors;
+                      }
+                      const nextErrors = { ...currentErrors };
+                      delete nextErrors.sellingValueDigits;
+                      return nextErrors;
+                    });
+                  }}
                 />
+                {formErrors.sellingValueDigits ? (
+                  <p className={ui.fieldErrorMessage} id="recipe-selling-value-error">
+                    {formErrors.sellingValueDigits}
+                  </p>
+                ) : null}
               </label>
             </div>
 
@@ -402,8 +480,14 @@ export const RecipeFormPage = (): React.JSX.Element => {
               {groups.length ? (
                 <>
                   <label className={`${ui.field} ${styles.groupField}`}>
-                    <span>Grupo</span>
+                    <span>
+                      Grupo
+                      <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
+                    </span>
                     <select
+                      aria-describedby={formErrors.groupId ? 'recipe-group-error' : undefined}
+                      aria-invalid={Boolean(formErrors.groupId)}
+                      className={formErrors.groupId ? ui.fieldControlInvalid : undefined}
                       name="groupId"
                       onChange={handleFieldChange('groupId')}
                       value={formState.groupId}
@@ -415,6 +499,11 @@ export const RecipeFormPage = (): React.JSX.Element => {
                         </option>
                       ))}
                     </select>
+                    {formErrors.groupId ? (
+                      <p className={ui.fieldErrorMessage} id="recipe-group-error">
+                        {formErrors.groupId}
+                      </p>
+                    ) : null}
                   </label>
                   <button
                     type="button"
@@ -425,25 +514,39 @@ export const RecipeFormPage = (): React.JSX.Element => {
                   </button>
                 </>
               ) : (
-                <button
-                  type="button"
-                  className={ui.primaryButton}
-                  onClick={() => setIsGroupModalOpen(true)}
-                >
-                  Criar Grupo
-                </button>
+                <div className={styles.groupEmptyState}>
+                  <button
+                    type="button"
+                    className={ui.primaryButton}
+                    onClick={() => setIsGroupModalOpen(true)}
+                  >
+                    Criar Grupo
+                  </button>
+                  {formErrors.groupId ? (
+                    <p className={ui.fieldErrorMessage} id="recipe-group-error">
+                      {formErrors.groupId}
+                    </p>
+                  ) : null}
+                </div>
               )}
             </div>
           </div>
         </section>
 
-        <section className={`${styles.sectionPanel} ${styles.section}`}>
+        <section
+          className={`${styles.sectionPanel} ${styles.section} ${
+            formErrors.ingredients ? styles.sectionInvalid : ''
+          }`}
+        >
           <div className={styles.sectionHeader}>
             <div>
               <h3 className={styles.sectionTitle}>Ingredientes</h3>
               <p className={styles.sectionDescription}>
                 Adicione ao menos uma matéria-prima para compor a receita.
               </p>
+              {formErrors.ingredients ? (
+                <p className={ui.fieldErrorMessage}>{formErrors.ingredients}</p>
+              ) : null}
             </div>
             <button
               type="button"
@@ -577,6 +680,14 @@ export const RecipeFormPage = (): React.JSX.Element => {
             setIngredients((currentItems) =>
               upsertIngredient(currentItems, value, editingIngredientIndex),
             );
+            setFormErrors((currentErrors) => {
+              if (!currentErrors.ingredients) {
+                return currentErrors;
+              }
+              const nextErrors = { ...currentErrors };
+              delete nextErrors.ingredients;
+              return nextErrors;
+            });
             closeIngredientModal();
           }}
         />

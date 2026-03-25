@@ -141,7 +141,7 @@ describe('PackingsPage', () => {
     expect(sonnerMocks.toastSuccessMock).toHaveBeenCalledWith('Embalagem criada com sucesso!');
   });
 
-  it('blocks invalid packing submission and shows the error toast', async () => {
+  it('blocks invalid packing submission and highlights invalid fields', async () => {
     render(<PackingsPage />);
 
     await screen.findByRole('cell', { name: 'Caixa kraft' });
@@ -151,9 +151,10 @@ describe('PackingsPage', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
-    expect(sonnerMocks.toastErrorMock).toHaveBeenCalledWith(
-      'Preencha nome, quantidade, preço e unidade com valores válidos.',
-    );
+    expect(packingServiceMocks.createPackingMock).not.toHaveBeenCalled();
+    expect(screen.getByText('Informe o nome da embalagem.')).toBeInTheDocument();
+    expect(screen.getByText('Informe uma quantidade maior que zero.')).toBeInTheDocument();
+    expect(screen.getByText('Informe um preço maior que zero.')).toBeInTheDocument();
     expect(screen.getByRole('dialog', { name: 'Adicionar Embalagem' })).toBeInTheDocument();
   });
 

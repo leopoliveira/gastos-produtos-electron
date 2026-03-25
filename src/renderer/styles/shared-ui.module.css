@@ -97,6 +97,18 @@
   gap: 18px;
 }
 
+.requiredHint {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #9f3424;
+}
+
+.requiredMark {
+  color: #9f3424;
+  margin-left: 4px;
+}
+
 .formGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

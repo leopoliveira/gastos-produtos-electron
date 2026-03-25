@@ -74,11 +74,17 @@ export const PackingFormModal = ({
       onClose={onClose}
     >
       <form className={ui.form} onSubmit={handleSubmit}>
+        <p className={ui.requiredHint}>* Campos obrigatórios</p>
+
         <label className={ui.field}>
-          <span>Nome</span>
+          <span>
+            Nome
+            <strong className={ui.requiredMark}>*</strong>
+          </span>
           <input
             name="name"
             onChange={handleFieldChange('name')}
+            required
             type="text"
             value={formState.name}
           />
@@ -96,11 +102,15 @@ export const PackingFormModal = ({
 
         <div className={ui.formGrid}>
           <label className={ui.field}>
-            <span>Quantidade</span>
+            <span>
+              Quantidade
+              <strong className={ui.requiredMark}>*</strong>
+            </span>
             <input
               min="0"
               name="quantity"
               onChange={handleFieldChange('quantity')}
+              required
               step="0.01"
               type="number"
               value={formState.quantity}
@@ -108,10 +118,14 @@ export const PackingFormModal = ({
           </label>
 
           <label className={ui.field}>
-            <span>Unidade de Medida</span>
+            <span>
+              Unidade de Medida
+              <strong className={ui.requiredMark}>*</strong>
+            </span>
             <select
               name="unitOfMeasure"
               onChange={handleFieldChange('unitOfMeasure')}
+              required
               value={formState.unitOfMeasure}
             >
               {getUnitOfMeasureValues().map((unit) => (
@@ -125,13 +139,17 @@ export const PackingFormModal = ({
 
         <div className={ui.formGrid}>
           <label className={ui.field}>
-            <span>Preço</span>
+            <span>
+              Preço
+              <strong className={ui.requiredMark}>*</strong>
+            </span>
             <CurrencyMaskedInput
               digits={formState.priceDigits}
               name="price"
               onDigitsChange={(priceDigits) =>
                 setFormState((currentState) => ({ ...currentState, priceDigits }))
               }
+              required
             />
           </label>
 

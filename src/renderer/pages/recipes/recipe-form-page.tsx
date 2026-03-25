@@ -676,7 +676,7 @@ export const RecipeFormPage = (): React.JSX.Element => {
             editingIngredientIndex === null ? undefined : ingredients[editingIngredientIndex]
           }
           onClose={closeIngredientModal}
-          onSubmit={(value) => {
+          onSubmit={(value, shouldClose) => {
             setIngredients((currentItems) =>
               upsertIngredient(currentItems, value, editingIngredientIndex),
             );
@@ -688,7 +688,11 @@ export const RecipeFormPage = (): React.JSX.Element => {
               delete nextErrors.ingredients;
               return nextErrors;
             });
-            closeIngredientModal();
+            if (shouldClose) {
+              closeIngredientModal();
+            } else {
+              setEditingIngredientIndex(null);
+            }
           }}
         />
       ) : null}
@@ -698,9 +702,13 @@ export const RecipeFormPage = (): React.JSX.Element => {
           packings={packingOptions}
           initialValue={editingPackingIndex === null ? undefined : packings[editingPackingIndex]}
           onClose={closePackingModal}
-          onSubmit={(value) => {
+          onSubmit={(value, shouldClose) => {
             setPackings((currentItems) => upsertPacking(currentItems, value, editingPackingIndex));
-            closePackingModal();
+            if (shouldClose) {
+              closePackingModal();
+            } else {
+              setEditingPackingIndex(null);
+            }
           }}
         />
       ) : null}

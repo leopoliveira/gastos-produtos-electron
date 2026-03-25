@@ -10,7 +10,7 @@ type IngredientFormModalProps = {
   ingredients: IReadProduct[];
   initialValue?: IRecipeIngredientInput;
   onClose: () => void;
-  onSubmit: (value: IRecipeIngredientInput) => void;
+  onSubmit: (value: IRecipeIngredientInput, shouldClose: boolean) => void;
 };
 
 type IngredientFormErrors = {
@@ -27,6 +27,7 @@ export const IngredientFormModal = ({
   const [ingredientId, setIngredientId] = useState(initialValue?.ingredientId ?? '');
   const [quantity, setQuantity] = useState(initialValue ? String(initialValue.quantity) : '');
   const [formErrors, setFormErrors] = useState<IngredientFormErrors>({});
+  const isEditing = Boolean(initialValue);
 
   const validateForm = (): IngredientFormErrors => {
     const nextErrors: IngredientFormErrors = {};
@@ -43,25 +44,32 @@ export const IngredientFormModal = ({
     return nextErrors;
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const submitForm = (shouldClose: boolean): boolean => {
     const nextErrors = validateForm();
     if (Object.keys(nextErrors).length > 0) {
       setFormErrors(nextErrors);
-      return;
+      return false;
     }
 
     setFormErrors({});
-    onSubmit({
+    onSubmit(
+      {
       ingredientId,
       quantity: Number(quantity),
-    });
+      },
+      shouldClose,
+    );
+    return true;
+  };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submitForm(true);
   };
 
   return (
     <Modal
-      title={initialValue ? 'Editar Matéria Prima' : 'Buscar Matéria Prima'}
+      title={isEditing ? 'Editar Matéria Prima' : 'Buscar Matéria Prima'}
       description="Selecione a matéria-prima e informe a quantidade usada na receita."
       onClose={onClose}
     >
@@ -138,7 +146,20 @@ export const IngredientFormModal = ({
           ) : null}
         </label>
 
-        <ModalActions confirmButtonType="submit" confirmLabel="Salvar" onCancel={onClose} />
+        <ModalActions
+          confirmButtonType="submit"
+          confirmLabel="Salvar"
+          onCancel={onClose}
+          onSecondaryConfirm={() => {
+            const didSubmit = submitForm(false);
+            if (!didSubmit) {
+              return;
+            }
+            setIngredientId('');
+            setQuantity('');
+          }}
+          secondaryConfirmLabel={isEditing ? undefined : 'Salvar e Adicionar'}
+        />
       </form>
     </Modal>
   );

@@ -10,7 +10,7 @@ type PackingSelectionModalProps = {
   packings: IReadPacking[];
   initialValue?: IRecipePackingInput;
   onClose: () => void;
-  onSubmit: (value: IRecipePackingInput) => void;
+  onSubmit: (value: IRecipePackingInput, shouldClose: boolean) => void;
 };
 
 type PackingFormErrors = {
@@ -27,6 +27,7 @@ export const PackingSelectionModal = ({
   const [packingId, setPackingId] = useState(initialValue?.packingId ?? '');
   const [quantity, setQuantity] = useState(initialValue ? String(initialValue.quantity) : '');
   const [formErrors, setFormErrors] = useState<PackingFormErrors>({});
+  const isEditing = Boolean(initialValue);
 
   const validateForm = (): PackingFormErrors => {
     const nextErrors: PackingFormErrors = {};
@@ -43,25 +44,32 @@ export const PackingSelectionModal = ({
     return nextErrors;
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const submitForm = (shouldClose: boolean): boolean => {
     const nextErrors = validateForm();
     if (Object.keys(nextErrors).length > 0) {
       setFormErrors(nextErrors);
-      return;
+      return false;
     }
 
     setFormErrors({});
-    onSubmit({
+    onSubmit(
+      {
       packingId,
       quantity: Number(quantity),
-    });
+      },
+      shouldClose,
+    );
+    return true;
+  };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submitForm(true);
   };
 
   return (
     <Modal
-      title={initialValue ? 'Editar Embalagem' : 'Buscar Embalagem'}
+      title={isEditing ? 'Editar Embalagem' : 'Buscar Embalagem'}
       description="Selecione a embalagem e informe a quantidade usada na receita."
       onClose={onClose}
     >
@@ -138,7 +146,20 @@ export const PackingSelectionModal = ({
           ) : null}
         </label>
 
-        <ModalActions confirmButtonType="submit" confirmLabel="Salvar" onCancel={onClose} />
+        <ModalActions
+          confirmButtonType="submit"
+          confirmLabel="Salvar"
+          onCancel={onClose}
+          onSecondaryConfirm={() => {
+            const didSubmit = submitForm(false);
+            if (!didSubmit) {
+              return;
+            }
+            setPackingId('');
+            setQuantity('');
+          }}
+          secondaryConfirmLabel={isEditing ? undefined : 'Salvar e Adicionar'}
+        />
       </form>
     </Modal>
   );

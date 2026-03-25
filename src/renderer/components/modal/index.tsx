@@ -17,6 +17,9 @@ type ModalActionsProps = {
   confirmVariant?: 'primary' | 'danger';
   isConfirmDisabled?: boolean;
   onConfirm?: () => void;
+  secondaryConfirmLabel?: string;
+  onSecondaryConfirm?: () => void;
+  isSecondaryConfirmDisabled?: boolean;
 };
 
 type ConfirmModalProps = {
@@ -82,11 +85,24 @@ export const ModalActions = ({
   confirmVariant = 'primary',
   isConfirmDisabled = false,
   onConfirm,
+  secondaryConfirmLabel,
+  onSecondaryConfirm,
+  isSecondaryConfirmDisabled = false,
 }: ModalActionsProps): React.JSX.Element => (
   <footer className={styles.footer}>
     <button className={`${styles.button} ${styles.buttonSecondary}`} onClick={onCancel} type="button">
       {cancelLabel}
     </button>
+    {secondaryConfirmLabel ? (
+      <button
+        className={`${styles.button} ${styles.buttonPrimary}`}
+        disabled={isSecondaryConfirmDisabled}
+        onClick={onSecondaryConfirm}
+        type="button"
+      >
+        {secondaryConfirmLabel}
+      </button>
+    ) : null}
     <button
       className={`${styles.button} ${confirmVariant === 'danger' ? styles.buttonDanger : styles.buttonPrimary}`}
       disabled={isConfirmDisabled}

@@ -25,7 +25,7 @@ describe('packing modals', () => {
       target: { value: '2500' },
     });
     fireEvent.change(screen.getByRole('combobox', { name: 'Unidade de Medida' }), {
-      target: { value: String(UnitOfMeasure.box) },
+      target: { value: String(UnitOfMeasure.kg) },
     });
 
     expect(screen.getByRole('textbox', { name: 'Preço Unitário' })).toHaveValue(
@@ -39,7 +39,7 @@ describe('packing modals', () => {
       description: 'Embalagem kraft',
       quantity: 10,
       price: 25,
-      unitOfMeasure: UnitOfMeasure.box,
+      unitOfMeasure: UnitOfMeasure.kg,
     });
   });
 

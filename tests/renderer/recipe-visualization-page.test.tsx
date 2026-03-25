@@ -42,7 +42,7 @@ const recipe: IReadRecipe = {
       packingId: 'packing-1',
       name: 'Caixa kraft',
       quantity: 20,
-      unitOfMeasure: UnitOfMeasure.box,
+      unitOfMeasure: UnitOfMeasure.kg,
       unitPrice: 0.4,
       totalCost: 8,
     },

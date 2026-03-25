@@ -97,7 +97,7 @@ describe('main backend services', () => {
       description: 'Caixa para 4 brigadeiros',
       price: 20,
       quantity: 50,
-      unitOfMeasure: UnitOfMeasure.box,
+      unitOfMeasure: UnitOfMeasure.kg,
     });
 
     await services.packings.update(createdPacking.packingId, {
@@ -105,7 +105,7 @@ describe('main backend services', () => {
       description: 'Linha premium',
       price: 24,
       quantity: 60,
-      unitOfMeasure: UnitOfMeasure.box,
+      unitOfMeasure: UnitOfMeasure.kg,
     });
 
     const updatedPacking = await services.packings.getById(createdPacking.packingId);
@@ -243,7 +243,7 @@ describe('main backend services', () => {
       description: 'Caixa para 4 brigadeiros',
       price: 20,
       quantity: 50,
-      unitOfMeasure: UnitOfMeasure.box,
+      unitOfMeasure: UnitOfMeasure.kg,
     });
     const group = await services.groups.create({
       name: 'Brigadeiros',
@@ -298,7 +298,7 @@ describe('main backend services', () => {
       expect.objectContaining({
         packingId: packing.packingId,
         name: 'Caixa kraft',
-        unitOfMeasure: UnitOfMeasure.box,
+        unitOfMeasure: UnitOfMeasure.kg,
         unitPrice: 0.4,
         totalCost: 0.8,
       }),
@@ -359,7 +359,7 @@ describe('main backend services', () => {
       description: 'Embalagem base',
       price: 12,
       quantity: 12,
-      unitOfMeasure: UnitOfMeasure.box,
+      unitOfMeasure: UnitOfMeasure.kg,
     });
 
     const recipe = await services.recipes.create({

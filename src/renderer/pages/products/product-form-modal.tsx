@@ -30,7 +30,7 @@ const toFormState = (product?: IReadProduct): ProductFormState => ({
   name: product?.name ?? '',
   quantity: product ? String(product.quantity) : '',
   priceDigits: product ? currencyDigitStringFromAmount(product.price) : '',
-  unitOfMeasure: String(product?.unitOfMeasure ?? UnitOfMeasure.un),
+  unitOfMeasure: String(product?.unitOfMeasure ?? UnitOfMeasure.mg),
 });
 
 export const ProductFormModal = ({

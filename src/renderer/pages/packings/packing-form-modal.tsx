@@ -32,7 +32,7 @@ const toFormState = (packing?: IReadPacking): PackingFormState => ({
   description: packing?.description ?? '',
   quantity: packing ? String(packing.quantity) : '',
   priceDigits: packing ? currencyDigitStringFromAmount(packing.price) : '',
-  unitOfMeasure: String(packing?.unitOfMeasure ?? UnitOfMeasure.un),
+  unitOfMeasure: String(packing?.unitOfMeasure ?? UnitOfMeasure.mg),
 });
 
 export const PackingFormModal = ({

@@ -84,7 +84,7 @@ const packingOptions = [
     description: 'Caixa para doces',
     price: 20,
     quantity: 50,
-    unitOfMeasure: UnitOfMeasure.box,
+    unitOfMeasure: UnitOfMeasure.kg,
     packingUnitPrice: 0.4,
   },
 ];
@@ -120,7 +120,7 @@ const recipe: IReadRecipe = {
       packingId: 'packing-1',
       name: 'Caixa kraft',
       quantity: 20,
-      unitOfMeasure: UnitOfMeasure.box,
+      unitOfMeasure: UnitOfMeasure.kg,
       unitPrice: 0.4,
       totalCost: 8,
     },
@@ -235,7 +235,7 @@ describe('RecipeFormPage', () => {
     });
     fireEvent.click(within(packingDialog).getByRole('button', { name: 'Salvar' }));
 
-    expect(screen.getByRole('button', { name: 'Caixa kraft • 12 box' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Caixa kraft • 12 kg' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 

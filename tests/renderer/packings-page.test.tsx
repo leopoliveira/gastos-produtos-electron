@@ -39,7 +39,7 @@ const basePackings = [
     description: 'Caixa para 4 brigadeiros',
     price: 20,
     quantity: 50,
-    unitOfMeasure: UnitOfMeasure.box,
+    unitOfMeasure: UnitOfMeasure.kg,
     packingUnitPrice: 0.4,
   },
   {
@@ -48,7 +48,7 @@ const basePackings = [
     description: 'Saco transparente',
     price: 15,
     quantity: 100,
-    unitOfMeasure: UnitOfMeasure.bag,
+    unitOfMeasure: UnitOfMeasure.un,
     packingUnitPrice: 0.15,
   },
 ];
@@ -102,7 +102,7 @@ describe('PackingsPage', () => {
           description: 'Fita decorativa',
           price: 8,
           quantity: 20,
-          unitOfMeasure: UnitOfMeasure.roll,
+          unitOfMeasure: UnitOfMeasure.kg,
           packingUnitPrice: 0.4,
         },
       ]);
@@ -124,7 +124,7 @@ describe('PackingsPage', () => {
       target: { value: '800' },
     });
     fireEvent.change(screen.getByRole('combobox', { name: 'Unidade de Medida' }), {
-      target: { value: String(UnitOfMeasure.roll) },
+      target: { value: String(UnitOfMeasure.kg) },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
@@ -134,7 +134,7 @@ describe('PackingsPage', () => {
         description: 'Fita decorativa',
         quantity: 20,
         price: 8,
-        unitOfMeasure: UnitOfMeasure.roll,
+        unitOfMeasure: UnitOfMeasure.kg,
       }),
     );
     expect(await screen.findByRole('cell', { name: 'Fita de cetim' })).toBeInTheDocument();
@@ -188,7 +188,7 @@ describe('PackingsPage', () => {
         description: 'Caixa para 4 brigadeiros',
         quantity: 50,
         price: 20,
-        unitOfMeasure: UnitOfMeasure.box,
+        unitOfMeasure: UnitOfMeasure.kg,
       }),
     );
     expect(await screen.findByRole('cell', { name: 'Caixa kraft premium' })).toBeInTheDocument();

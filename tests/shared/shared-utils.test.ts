@@ -22,25 +22,10 @@ describe('shared utils', () => {
       'ml',
       'l',
       'un',
-      'box',
-      'package',
-      'bag',
-      'bottle',
-      'can',
-      'pot',
-      'tube',
-      'sachet',
-      'roll',
-      'sheet',
-      'pair',
-      'dozen',
-      'set',
-      'kit',
-      'other',
     ]);
   });
 
-  it('returns all numeric unit values in enum order', () => {
+  it('returns only the primary unit values for selection', () => {
     expect(getUnitOfMeasureValues()).toEqual([
       UnitOfMeasure.mg,
       UnitOfMeasure.g,
@@ -48,21 +33,6 @@ describe('shared utils', () => {
       UnitOfMeasure.ml,
       UnitOfMeasure.l,
       UnitOfMeasure.un,
-      UnitOfMeasure.box,
-      UnitOfMeasure.package,
-      UnitOfMeasure.bag,
-      UnitOfMeasure.bottle,
-      UnitOfMeasure.can,
-      UnitOfMeasure.pot,
-      UnitOfMeasure.tube,
-      UnitOfMeasure.sachet,
-      UnitOfMeasure.roll,
-      UnitOfMeasure.sheet,
-      UnitOfMeasure.pair,
-      UnitOfMeasure.dozen,
-      UnitOfMeasure.set,
-      UnitOfMeasure.kit,
-      UnitOfMeasure.other,
     ]);
   });
 });

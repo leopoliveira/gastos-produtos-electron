@@ -24,6 +24,7 @@ Os dados ficam no computador do usuário, em SQLite.
 - cadastro e manutenção de embalagens
 - cadastro e manutenção de grupos
 - cadastro e manutenção de receitas
+- seleção de unidade de medida na composição das receitas (ex.: kg/g/mg e l/ml), mantendo a unidade informada pelo usuário na visualização e edição
 - cálculo e exibição de valores em moeda BRL
 - persistência local com migrações versionadas de banco
 

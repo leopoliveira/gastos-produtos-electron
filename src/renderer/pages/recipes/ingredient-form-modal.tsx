@@ -1,8 +1,9 @@
 import type React from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { IReadProduct } from '../../../shared/products';
 import type { IRecipeIngredientInput } from '../../../shared/recipes';
+import { normalizeString } from '../../../shared/string';
 import {
   getCompatibleUnitOfMeasureValues,
   getUnitOfMeasureLabel,
@@ -36,8 +37,21 @@ export const IngredientFormModal = ({
     initialValue?.unitOfMeasure ?? '',
   );
   const [formErrors, setFormErrors] = useState<IngredientFormErrors>({});
+  const [nameQuery, setNameQuery] = useState('');
   const isEditing = Boolean(initialValue);
   const selectedIngredient = ingredients.find((item) => item.id === ingredientId);
+
+  const filteredIngredients = useMemo(() => {
+    const needle = normalizeString(nameQuery);
+    if (!needle) {
+      return ingredients;
+    }
+    return ingredients.filter(
+      (ingredient) =>
+        (ingredientId !== '' && ingredient.id === ingredientId) ||
+        normalizeString(ingredient.name).includes(needle),
+    );
+  }, [ingredients, ingredientId, nameQuery]);
   const availableUnits = selectedIngredient
     ? getCompatibleUnitOfMeasureValues(selectedIngredient.unitOfMeasure)
     : [];
@@ -95,44 +109,63 @@ export const IngredientFormModal = ({
         <p className={ui.requiredHint}>* Campos obrigatórios</p>
 
         <label className={ui.field}>
-          <span>
-            Matéria Prima
-            <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
-          </span>
-          <select
-            aria-describedby={formErrors.ingredientId ? 'ingredient-id-error' : undefined}
-            aria-invalid={Boolean(formErrors.ingredientId)}
-            className={formErrors.ingredientId ? ui.fieldControlInvalid : undefined}
-            name="ingredientId"
-            onChange={(event) => {
-              setIngredientId(event.target.value);
-              const nextIngredient = ingredients.find((item) => item.id === event.target.value);
-              setUnitOfMeasure(nextIngredient?.unitOfMeasure ?? '');
-              setFormErrors((current) => {
-                if (!current.ingredientId && !current.unitOfMeasure) {
-                  return current;
-                }
-                const next = { ...current };
-                delete next.ingredientId;
-                delete next.unitOfMeasure;
-                return next;
-              });
-            }}
-            value={ingredientId}
-          >
-            <option value="">Selecione</option>
-            {ingredients.map((ingredient) => (
-              <option key={ingredient.id} value={ingredient.id}>
-                {ingredient.name}
-              </option>
-            ))}
-          </select>
+          <span>Pesquisar matéria-prima pelo nome</span>
+          <input
+            autoComplete="off"
+            name="ingredientNameFilter"
+            onChange={(event) => setNameQuery(event.target.value)}
+            placeholder="Digite para filtrar a lista"
+            type="search"
+            value={nameQuery}
+          />
+        </label>
+
+        <div className={ui.field}>
+          <label className={ui.field}>
+            <span>
+              Matéria Prima
+              <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
+            </span>
+            <select
+              aria-describedby={formErrors.ingredientId ? 'ingredient-id-error' : undefined}
+              aria-invalid={Boolean(formErrors.ingredientId)}
+              className={formErrors.ingredientId ? ui.fieldControlInvalid : undefined}
+              name="ingredientId"
+              onChange={(event) => {
+                setIngredientId(event.target.value);
+                const nextIngredient = ingredients.find((item) => item.id === event.target.value);
+                setUnitOfMeasure(nextIngredient?.unitOfMeasure ?? '');
+                setFormErrors((current) => {
+                  if (!current.ingredientId && !current.unitOfMeasure) {
+                    return current;
+                  }
+                  const next = { ...current };
+                  delete next.ingredientId;
+                  delete next.unitOfMeasure;
+                  return next;
+                });
+              }}
+              value={ingredientId}
+            >
+              <option value="">Selecione</option>
+              {filteredIngredients.map((ingredient) => (
+                <option key={ingredient.id} value={ingredient.id}>
+                  {ingredient.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {nameQuery.trim() && filteredIngredients.length === 0 ? (
+            <p className={ui.feedbackMessage} role="status" style={{ margin: 0 }}>
+              Nenhuma matéria-prima encontrada com esse nome.
+            </p>
+          ) : null}
           {formErrors.ingredientId ? (
             <p className={ui.fieldErrorMessage} id="ingredient-id-error">
               {formErrors.ingredientId}
             </p>
           ) : null}
-        </label>
+        </div>
 
         <label className={ui.field}>
           <span>

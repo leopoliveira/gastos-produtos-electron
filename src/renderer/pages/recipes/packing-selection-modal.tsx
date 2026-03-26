@@ -1,8 +1,9 @@
 import type React from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { IReadPacking } from '../../../shared/packings';
 import type { IRecipePackingInput } from '../../../shared/recipes';
+import { normalizeString } from '../../../shared/string';
 import {
   getCompatibleUnitOfMeasureValues,
   getUnitOfMeasureLabel,
@@ -36,8 +37,21 @@ export const PackingSelectionModal = ({
     initialValue?.unitOfMeasure ?? '',
   );
   const [formErrors, setFormErrors] = useState<PackingFormErrors>({});
+  const [nameQuery, setNameQuery] = useState('');
   const isEditing = Boolean(initialValue);
   const selectedPacking = packings.find((item) => item.id === packingId);
+
+  const filteredPackings = useMemo(() => {
+    const needle = normalizeString(nameQuery);
+    if (!needle) {
+      return packings;
+    }
+    return packings.filter(
+      (packing) =>
+        (packingId !== '' && packing.id === packingId) ||
+        normalizeString(packing.name).includes(needle),
+    );
+  }, [packings, packingId, nameQuery]);
   const availableUnits = selectedPacking
     ? getCompatibleUnitOfMeasureValues(selectedPacking.unitOfMeasure)
     : [];
@@ -95,44 +109,63 @@ export const PackingSelectionModal = ({
         <p className={ui.requiredHint}>* Campos obrigatórios</p>
 
         <label className={ui.field}>
-          <span>
-            Embalagem
-            <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
-          </span>
-          <select
-            aria-describedby={formErrors.packingId ? 'packing-id-error' : undefined}
-            aria-invalid={Boolean(formErrors.packingId)}
-            className={formErrors.packingId ? ui.fieldControlInvalid : undefined}
-            name="packingId"
-            onChange={(event) => {
-              setPackingId(event.target.value);
-              const nextPacking = packings.find((item) => item.id === event.target.value);
-              setUnitOfMeasure(nextPacking?.unitOfMeasure ?? '');
-              setFormErrors((current) => {
-                if (!current.packingId && !current.unitOfMeasure) {
-                  return current;
-                }
-                const next = { ...current };
-                delete next.packingId;
-                delete next.unitOfMeasure;
-                return next;
-              });
-            }}
-            value={packingId}
-          >
-            <option value="">Selecione</option>
-            {packings.map((packing) => (
-              <option key={packing.id} value={packing.id}>
-                {packing.name}
-              </option>
-            ))}
-          </select>
+          <span>Pesquisar embalagem pelo nome</span>
+          <input
+            autoComplete="off"
+            name="packingNameFilter"
+            onChange={(event) => setNameQuery(event.target.value)}
+            placeholder="Digite para filtrar a lista"
+            type="search"
+            value={nameQuery}
+          />
+        </label>
+
+        <div className={ui.field}>
+          <label className={ui.field}>
+            <span>
+              Embalagem
+              <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
+            </span>
+            <select
+              aria-describedby={formErrors.packingId ? 'packing-id-error' : undefined}
+              aria-invalid={Boolean(formErrors.packingId)}
+              className={formErrors.packingId ? ui.fieldControlInvalid : undefined}
+              name="packingId"
+              onChange={(event) => {
+                setPackingId(event.target.value);
+                const nextPacking = packings.find((item) => item.id === event.target.value);
+                setUnitOfMeasure(nextPacking?.unitOfMeasure ?? '');
+                setFormErrors((current) => {
+                  if (!current.packingId && !current.unitOfMeasure) {
+                    return current;
+                  }
+                  const next = { ...current };
+                  delete next.packingId;
+                  delete next.unitOfMeasure;
+                  return next;
+                });
+              }}
+              value={packingId}
+            >
+              <option value="">Selecione</option>
+              {filteredPackings.map((packing) => (
+                <option key={packing.id} value={packing.id}>
+                  {packing.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {nameQuery.trim() && filteredPackings.length === 0 ? (
+            <p className={ui.feedbackMessage} role="status" style={{ margin: 0 }}>
+              Nenhuma embalagem encontrada com esse nome.
+            </p>
+          ) : null}
           {formErrors.packingId ? (
             <p className={ui.fieldErrorMessage} id="packing-id-error">
               {formErrors.packingId}
             </p>
           ) : null}
-        </label>
+        </div>
 
         <label className={ui.field}>
           <span>

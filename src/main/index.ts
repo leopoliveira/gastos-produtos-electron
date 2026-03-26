@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron';
 import started from 'electron-squirrel-startup';
 
 import { initializeDatabase } from './backend/infra/sqlite/database';
+import { registerBackupIpcHandlers } from './ipc/backup-ipc';
 import { registerBackendIpcHandlers } from './ipc/backend-ipc';
 import { registerLoggingIpcHandlers } from './ipc/logging-ipc';
 import { configureMainProcessLogging, mainLog } from './logging/app-logger';
@@ -18,6 +19,7 @@ void app.whenReady()
   .then(async () => {
     await initializeDatabase();
     registerLoggingIpcHandlers();
+    registerBackupIpcHandlers();
     registerBackendIpcHandlers();
     createMainWindow();
   })

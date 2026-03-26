@@ -63,7 +63,17 @@ export const ipcChannels = {
     list: 'recipes:list',
     update: 'recipes:update',
   },
+  backup: {
+    export: 'backup:export',
+    import: 'backup:import',
+  },
 } as const;
+
+export type BackupExportResult =
+  | { canceled: true }
+  | { canceled: false; filePath: string };
+
+export type BackupImportResult = { canceled: true } | { canceled: false };
 
 export interface EntityIdPayload {
   id: string;
@@ -91,18 +101,21 @@ export interface SerializedIpcError {
   problem: IpcProblemDetails;
 }
 
-const IPC_ERROR_PREFIX = '__APP_IPC_ERROR__:';
+export const IPC_ERROR_PREFIX = '__APP_IPC_ERROR__:' as const;
 
 export const serializeIpcError = (payload: SerializedIpcError): string =>
   `${IPC_ERROR_PREFIX}${JSON.stringify(payload)}`;
 
 export const parseIpcError = (message: string): SerializedIpcError | undefined => {
-  if (!message.startsWith(IPC_ERROR_PREFIX)) {
+  const prefixIndex = message.indexOf(IPC_ERROR_PREFIX);
+  if (prefixIndex === -1) {
     return undefined;
   }
 
+  const jsonPayload = message.slice(prefixIndex + IPC_ERROR_PREFIX.length);
+
   try {
-    return JSON.parse(message.slice(IPC_ERROR_PREFIX.length)) as SerializedIpcError;
+    return JSON.parse(jsonPayload) as SerializedIpcError;
   } catch {
     return undefined;
   }
@@ -144,7 +157,13 @@ export interface LoggingApi {
   write(payload: RendererLogPayload): Promise<void>;
 }
 
+export interface BackupApi {
+  exportBackup(): Promise<BackupExportResult>;
+  importBackup(): Promise<BackupImportResult>;
+}
+
 export interface AppApi {
+  backup: BackupApi;
   groups: GroupApi;
   logging: LoggingApi;
   packings: PackingApi;

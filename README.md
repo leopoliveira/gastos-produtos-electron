@@ -27,6 +27,7 @@ Os dados ficam no computador do usuário, em SQLite.
 - composição de receitas com unidades de medida flexíveis (ex.: kg/g/mg e l/ml), preservando exatamente o formato informado pelo usuário
 - cálculo e exibição de valores em moeda BRL
 - persistência local com migrações versionadas de banco
+- exportação e importação de backup do SQLite (em **Configurações**), com diálogo nativo para escolher pasta/arquivo
 
 ## Arquitetura (resumo)
 
@@ -102,6 +103,12 @@ Makers configurados:
 - O banco é SQLite (`gastos.db`).
 - A inicialização e migração acontecem no processo `main`.
 - O arquivo é salvo no diretório `userData` do Electron, na convenção `App_Data/gastos.db`.
+
+### Backup e restauração
+
+- Em **Configurações**, é possível **exportar** uma cópia consistente do banco (arquivo `.db` sugerido na pasta **Documentos**, com nome `gastos-backup-AAAA-MM-DD.db`; a data usa UTC) ou **importar** um backup gerado por aplicativo.
+- Exportação e escolha de caminho ocorrem só no processo principal (`dialog` nativo); o renderer não escolhe caminhos via IPC.
+- Importar substitui o banco atual; em caso de sucesso a janela é recarregada para refletir os dados restaurados.
 
 ## Segurança (Electron)
 

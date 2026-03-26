@@ -33,11 +33,11 @@ Current repo facts that matter:
 
 - Fuse hardening is already enabled in [`forge.config.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/forge.config.ts)
 - The current `webPreferences` in [`main-window.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/windows/main-window.ts) explicitly set `preload`, `contextIsolation: true`, `nodeIntegration: false`, and `sandbox: true`
-- The current window setup is split between [`index.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/index.ts) and [`main-window.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/windows/main-window.ts), with IPC handler registration and SQLite initialization happening during app startup
+- The current window setup is split between [`index.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/index.ts) and [`main-window.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/windows/main-window.ts), with IPC handler registration and SQLite initialization happening during app startup (including [`registerBackupIpcHandlers`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/backup-ipc.ts) alongside backend and logging IPC)
 - The current HTML in [`index.html`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/index.html) already defines a CSP and agents must preserve or tighten it when renderer assets change
 - The current preload in [`index.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/preload/index.ts) exposes a single `window.appApi` bridge backed by typed IPC channels in [`src/shared/ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/shared/ipc.ts)
 - The current backend persistence is local SQLite, initialized in [`database.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/backend/infra/sqlite/database.ts), with versioned migrations in [`migrations.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/backend/infra/sqlite/migrations.ts)
-- The current renderer service layer calls the preload bridge via helpers such as [`electron-api.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/services/electron-api.ts) and service modules under [`src/renderer/services/`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/services/)
+- The current renderer service layer calls the preload bridge via helpers such as [`electron-api.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/services/electron-api.ts) and service modules under [`src/renderer/services/`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/services/) (including [`backup-service.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/services/backup-service.ts) for database backup/export and restore)
 - Main-process logging is configured in [`app-logger.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/logging/app-logger.ts); renderer-side log forwarding uses [`app-log.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/services/app-log.ts) and [`logging-ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/logging-ipc.ts). See [Logging Pattern](#logging-pattern).
 
 When agents add features, they must move the project toward a stricter Electron posture, not away from it.
@@ -93,7 +93,7 @@ webPreferences: {
 - Prefer `ipcMain.handle`/`ipcRenderer.invoke` for request-response flows.
 - Avoid sync IPC.
 - Normalize domain errors in `main` and rethrow renderer-safe error objects from `preload`; do not leak raw stack traces or database errors across the bridge.
-- Prefer one handler module per bounded backend surface, with payload guards close to the handler registration.
+- Prefer one handler module per bounded backend surface, with payload guards close to the handler registration (domain CRUD in [`backend-ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/backend-ipc.ts); backup/restore in [`backup-ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/backup-ipc.ts)).
 
 Preferred preload shape:
 
@@ -124,6 +124,7 @@ contextBridge.exposeInMainWorld('electron', {
 - Keep SQL focused and readable; avoid introducing an ORM without a repo-specific reason.
 - Preserve the current domain behavior when changing persistence: soft delete, exact error messages where UX depends on them, and recipe snapshot semantics for ingredients and packings.
 - Schema or migration changes must be reflected in tests that exercise real SQLite behavior.
+- **Backup and restore** are privileged main-process operations in [`backup-ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/backup-ipc.ts): export uses `VACUUM INTO` to write a consistent standalone `.db` file; import validates the SQLite header, closes the pool, removes stale `-wal`/`-shm` siblings, copies the chosen file over `gastos.db`, reopens the database, and reloads the focused window. The renderer never receives filesystem paths from IPC payloads—only `dialog.showSaveDialog` / `showOpenDialog` in `main` choose paths. The UI entry point is [`configuration-page.tsx`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/renderer/pages/configuration/configuration-page.tsx); channels and types live under `ipc.backup` in [`ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/shared/ipc.ts).
 
 ### Navigation, External Content, And Remote Data
 
@@ -236,7 +237,7 @@ Agents should follow these patterns in this repository.
 - Do not leave `mainWindow.webContents.openDevTools()` unconditional.
 - Register navigation and window-creation guards near window setup.
 - Keep startup code small; move feature logic into focused modules when the file grows.
-- Startup may initialize the local database and register IPC handlers, but do not add unrelated heavy work before first window creation.
+- Startup may initialize the local database and register IPC handlers ([`registerLoggingIpcHandlers`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/logging-ipc.ts), [`registerBackupIpcHandlers`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/backup-ipc.ts), [`registerBackendIpcHandlers`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/backend-ipc.ts)), but do not add unrelated heavy work before first window creation.
 
 Recommended direction:
 
@@ -315,7 +316,7 @@ if (!app.isPackaged) {
 - Keep test code outside `src/`.
 - Prefer mirroring the production structure as tests are added.
 - Prefer real SQLite-backed tests for persistence and migration behavior.
-- Keep IPC tests focused on sender validation, payload validation, and serialized error behavior.
+- Keep IPC tests focused on sender validation, payload validation, and serialized error behavior (see [`backup-ipc.test.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/tests/main/backup-ipc.test.ts) for backup dialog and file-replace flows with mocks).
 - Keep renderer tests focused on service contracts and UI behavior, not main-process internals.
 
 ### `assets/`
@@ -348,7 +349,7 @@ Use a stable bracket prefix on the first argument so operators can filter:
 | `[backend]` | Process-wide backend wiring (e.g. services cache initialized). |
 | `[backend:sqlite]` | Database open/close, migration applied or failed. |
 | `[backend:products]`, `[backend:packings]`, `[backend:groups]`, `[backend:recipes]` | Domain service mutations and important business outcomes (e.g. soft-delete, blocked delete). |
-| `[ipc]` | Main IPC handler errors or diagnostics (see [`backend-ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/backend-ipc.ts)). |
+| `[ipc]` | Main IPC handler errors or diagnostics (e.g. [`backend-ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/backend-ipc.ts), [`backup-ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/backup-ipc.ts)). |
 | `[renderer]` | Lines forwarded from the renderer through [`logging-ipc.ts`](C:/Users/ldpo9/Documents/Projetos/gastos-produtos-electron/src/main/ipc/logging-ipc.ts). |
 
 When adding new areas, extend the `backend:<area>` pattern rather than inventing unrelated tags.
@@ -382,7 +383,7 @@ Before finishing a task, agents must verify:
 - `contextIsolation`, `sandbox`, and `nodeIntegration: false` remain enforced for renderer windows
 - no raw Electron or Node API was exposed to the renderer
 - IPC surface is narrow, typed, and validated
-- SQLite access remains in `main`, not `renderer` or `preload`
+- SQLite access remains in `main`, not `renderer` or `preload`; backup paths are chosen only via `dialog` in `main`, not from renderer-supplied paths
 - schema and migration changes are versioned and covered by tests when persistence changed
 - renderer service calls still go through the intended preload/API wrapper
 - navigation and external-link behavior are restricted appropriately
@@ -403,7 +404,7 @@ If a task involves any of the items below, agents should slow down, document the
 - adding a `<webview>`
 - exposing filesystem, shell, or process control to the renderer
 - adding broad IPC passthrough methods
-- accessing the database from preload or renderer
+- accessing the database from preload or renderer, or letting the renderer choose backup file paths (paths must come from `dialog` in `main`)
 - bypassing shared IPC contracts with ad hoc payload shapes
 - introducing a second persistence mechanism for the same feature without a migration plan
 - introducing background daemons, long-running child processes, or polling loops

@@ -26,6 +26,10 @@ const invoke = async <TResult>(channel: string, payload?: unknown): Promise<TRes
 };
 
 const appApi: AppApi = {
+  backup: {
+    exportBackup: () => invoke(ipcChannels.backup.export),
+    importBackup: () => invoke(ipcChannels.backup.import),
+  },
   logging: {
     write: (payload) => invoke(ipcChannels.logging.write, payload),
   },

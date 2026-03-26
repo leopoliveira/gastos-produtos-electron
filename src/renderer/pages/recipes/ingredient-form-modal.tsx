@@ -11,6 +11,7 @@ import {
 } from '../../../shared/unit-of-measure';
 import { Modal, ModalActions } from '../../components/modal';
 import ui from '../../styles/shared-ui.module.css';
+import pickerStyles from './searchable-name-picker.module.css';
 
 type IngredientFormModalProps = {
   ingredients: IReadProduct[];
@@ -102,64 +103,78 @@ export const IngredientFormModal = ({
   return (
     <Modal
       title={isEditing ? 'Editar Matéria Prima' : 'Buscar Matéria Prima'}
-      description="Selecione a matéria-prima e informe a quantidade usada na receita."
+      description="Digite para filtrar a lista, escolha a matéria-prima e informe a quantidade."
       onClose={onClose}
     >
       <form className={ui.form} onSubmit={handleSubmit}>
         <p className={ui.requiredHint}>* Campos obrigatórios</p>
 
-        <label className={ui.field}>
-          <span>Pesquisar matéria-prima pelo nome</span>
-          <input
-            autoComplete="off"
-            name="ingredientNameFilter"
-            onChange={(event) => setNameQuery(event.target.value)}
-            placeholder="Digite para filtrar a lista"
-            type="search"
-            value={nameQuery}
-          />
-        </label>
-
-        <div className={ui.field}>
-          <label className={ui.field}>
+        <div className={`${ui.field} ${pickerStyles.pickerBlock}`}>
+          <label className={ui.field} htmlFor="ingredient-name-picker-search">
             <span>
               Matéria Prima
               <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
             </span>
-            <select
+            <input
+              id="ingredient-name-picker-search"
+              aria-controls="ingredient-options-listbox"
               aria-describedby={formErrors.ingredientId ? 'ingredient-id-error' : undefined}
               aria-invalid={Boolean(formErrors.ingredientId)}
+              autoComplete="off"
               className={formErrors.ingredientId ? ui.fieldControlInvalid : undefined}
-              name="ingredientId"
-              onChange={(event) => {
-                setIngredientId(event.target.value);
-                const nextIngredient = ingredients.find((item) => item.id === event.target.value);
-                setUnitOfMeasure(nextIngredient?.unitOfMeasure ?? '');
-                setFormErrors((current) => {
-                  if (!current.ingredientId && !current.unitOfMeasure) {
-                    return current;
-                  }
-                  const next = { ...current };
-                  delete next.ingredientId;
-                  delete next.unitOfMeasure;
-                  return next;
-                });
-              }}
-              value={ingredientId}
-            >
-              <option value="">Selecione</option>
-              {filteredIngredients.map((ingredient) => (
-                <option key={ingredient.id} value={ingredient.id}>
-                  {ingredient.name}
-                </option>
-              ))}
-            </select>
+              name="ingredientNameFilter"
+              onChange={(event) => setNameQuery(event.target.value)}
+              placeholder="Digite para filtrar e escolher na lista"
+              type="search"
+              value={nameQuery}
+            />
           </label>
-          {nameQuery.trim() && filteredIngredients.length === 0 ? (
-            <p className={ui.feedbackMessage} role="status" style={{ margin: 0 }}>
-              Nenhuma matéria-prima encontrada com esse nome.
+          {ingredients.length === 0 ? (
+            <p className={pickerStyles.emptyState} role="status">
+              Nenhuma matéria-prima cadastrada.
             </p>
-          ) : null}
+          ) : (
+            <div
+              className={pickerStyles.optionList}
+              id="ingredient-options-listbox"
+              role="listbox"
+              aria-label="Matérias-primas disponíveis"
+            >
+              {filteredIngredients.length === 0 ? (
+                <p className={pickerStyles.emptyState} role="status">
+                  Nenhuma matéria-prima encontrada com esse nome.
+                </p>
+              ) : (
+                filteredIngredients.map((ingredient) => (
+                  <button
+                    key={ingredient.id}
+                    type="button"
+                    className={`${pickerStyles.optionButton} ${
+                      ingredient.id === ingredientId ? pickerStyles.optionSelected : ''
+                    }`}
+                    role="option"
+                    aria-selected={ingredient.id === ingredientId}
+                    onClick={() => {
+                      setIngredientId(ingredient.id);
+                      setNameQuery('');
+                      setUnitOfMeasure(ingredient.unitOfMeasure);
+                      setFormErrors((current) => {
+                        if (!current.ingredientId && !current.unitOfMeasure) {
+                          return current;
+                        }
+                        const next = { ...current };
+                        delete next.ingredientId;
+                        delete next.unitOfMeasure;
+                        return next;
+                      });
+                    }}
+                  >
+                    {ingredient.name}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
           {formErrors.ingredientId ? (
             <p className={ui.fieldErrorMessage} id="ingredient-id-error">
               {formErrors.ingredientId}
@@ -253,6 +268,7 @@ export const IngredientFormModal = ({
             setIngredientId('');
             setQuantity('');
             setUnitOfMeasure('');
+            setNameQuery('');
           }}
           secondaryConfirmLabel={isEditing ? undefined : 'Salvar e Adicionar'}
           secondaryConfirmTooltip={

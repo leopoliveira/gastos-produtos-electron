@@ -1,0 +1,51 @@
+.pickerBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.optionList {
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid rgba(120, 79, 51, 0.22);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.optionButton {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  text-align: left;
+  font: inherit;
+  color: #5a4031;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.optionButton:hover {
+  background: rgba(123, 63, 40, 0.08);
+}
+
+.optionButton:focus-visible {
+  outline: 2px solid #7b3f28;
+  outline-offset: 2px;
+}
+
+.optionSelected {
+  background: rgba(123, 63, 40, 0.14);
+  font-weight: 700;
+}
+
+.emptyState {
+  margin: 0;
+  padding: 14px 12px;
+  color: #7b5a47;
+  font-size: 0.9rem;
+}

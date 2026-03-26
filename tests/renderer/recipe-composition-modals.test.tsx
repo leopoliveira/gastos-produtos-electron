@@ -88,9 +88,7 @@ describe('recipe composition modals', () => {
       />,
     );
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Matéria Prima' }), {
-      target: { value: 'product-1' },
-    });
+    fireEvent.click(screen.getByRole('option', { name: 'Chocolate em po' }));
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
     expect(onSubmit).not.toHaveBeenCalled();
@@ -104,9 +102,7 @@ describe('recipe composition modals', () => {
       <PackingSelectionModal packings={packingOptions} onClose={vi.fn()} onSubmit={onSubmit} />,
     );
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Embalagem' }), {
-      target: { value: 'packing-1' },
-    });
+    fireEvent.click(screen.getByRole('option', { name: 'Caixa kraft' }));
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
     expect(onSubmit).not.toHaveBeenCalled();
@@ -124,9 +120,7 @@ describe('recipe composition modals', () => {
       />,
     );
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Matéria Prima' }), {
-      target: { value: 'product-1' },
-    });
+    fireEvent.click(screen.getByRole('option', { name: 'Chocolate em po' }));
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Quantidade' }), {
       target: { value: '1.5' },
     });
@@ -148,19 +142,16 @@ describe('recipe composition modals', () => {
       />,
     );
 
-    const ingredientSelect = screen.getByRole('combobox', { name: 'Matéria Prima' });
-    expect(within(ingredientSelect).getAllByRole('option')).toHaveLength(4);
+    const ingredientList = screen.getByRole('listbox', { name: 'Matérias-primas disponíveis' });
+    expect(within(ingredientList).getAllByRole('option')).toHaveLength(3);
 
-    fireEvent.change(screen.getByRole('searchbox'), {
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Matéria Prima' }), {
       target: { value: 'acucar' },
     });
 
-    const optionsAfterFilter = within(ingredientSelect).getAllByRole('option');
-    expect(optionsAfterFilter).toHaveLength(2);
-    expect(optionsAfterFilter.map((option) => option.textContent)).toEqual([
-      'Selecione',
-      'Açúcar refinado',
-    ]);
+    const optionsAfterFilter = within(ingredientList).getAllByRole('option');
+    expect(optionsAfterFilter).toHaveLength(1);
+    expect(optionsAfterFilter.map((option) => option.textContent)).toEqual(['Açúcar refinado']);
   });
 
   it('shows empty state when ingredient name filter matches nothing', () => {
@@ -172,12 +163,12 @@ describe('recipe composition modals', () => {
       />,
     );
 
-    fireEvent.change(screen.getByPlaceholderText('Digite para filtrar a lista'), {
+    fireEvent.change(screen.getByPlaceholderText('Digite para filtrar e escolher na lista'), {
       target: { value: 'xyzsemresultado' },
     });
 
-    const ingredientSelect = screen.getByRole('combobox', { name: 'Matéria Prima' });
-    expect(within(ingredientSelect).getAllByRole('option')).toHaveLength(1);
+    const ingredientList = screen.getByRole('listbox', { name: 'Matérias-primas disponíveis' });
+    expect(within(ingredientList).queryAllByRole('option')).toHaveLength(0);
     expect(
       screen.getByText('Nenhuma matéria-prima encontrada com esse nome.'),
     ).toBeInTheDocument();
@@ -192,15 +183,14 @@ describe('recipe composition modals', () => {
       />,
     );
 
-    const packingSelect = screen.getByRole('combobox', { name: 'Embalagem' });
-    expect(within(packingSelect).getAllByRole('option')).toHaveLength(3);
+    const packingList = screen.getByRole('listbox', { name: 'Embalagens disponíveis' });
+    expect(within(packingList).getAllByRole('option')).toHaveLength(2);
 
-    fireEvent.change(screen.getByPlaceholderText('Digite para filtrar a lista'), {
+    fireEvent.change(screen.getByPlaceholderText('Digite para filtrar e escolher na lista'), {
       target: { value: 'plastico' },
     });
 
-    expect(within(packingSelect).getAllByRole('option').map((o) => o.textContent)).toEqual([
-      'Selecione',
+    expect(within(packingList).getAllByRole('option').map((o) => o.textContent)).toEqual([
       'Saco plástico PP',
     ]);
   });
@@ -214,7 +204,7 @@ describe('recipe composition modals', () => {
       />,
     );
 
-    fireEvent.change(screen.getByPlaceholderText('Digite para filtrar a lista'), {
+    fireEvent.change(screen.getByPlaceholderText('Digite para filtrar e escolher na lista'), {
       target: { value: 'inexistente' },
     });
 

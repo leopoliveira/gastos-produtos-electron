@@ -11,6 +11,7 @@ import {
 } from '../../../shared/unit-of-measure';
 import { Modal, ModalActions } from '../../components/modal';
 import ui from '../../styles/shared-ui.module.css';
+import pickerStyles from './searchable-name-picker.module.css';
 
 type PackingSelectionModalProps = {
   packings: IReadPacking[];
@@ -102,64 +103,78 @@ export const PackingSelectionModal = ({
   return (
     <Modal
       title={isEditing ? 'Editar Embalagem' : 'Buscar Embalagem'}
-      description="Selecione a embalagem e informe a quantidade usada na receita."
+      description="Digite para filtrar a lista, escolha a embalagem e informe a quantidade."
       onClose={onClose}
     >
       <form className={ui.form} onSubmit={handleSubmit}>
         <p className={ui.requiredHint}>* Campos obrigatórios</p>
 
-        <label className={ui.field}>
-          <span>Pesquisar embalagem pelo nome</span>
-          <input
-            autoComplete="off"
-            name="packingNameFilter"
-            onChange={(event) => setNameQuery(event.target.value)}
-            placeholder="Digite para filtrar a lista"
-            type="search"
-            value={nameQuery}
-          />
-        </label>
-
-        <div className={ui.field}>
-          <label className={ui.field}>
+        <div className={`${ui.field} ${pickerStyles.pickerBlock}`}>
+          <label className={ui.field} htmlFor="packing-name-picker-search">
             <span>
               Embalagem
               <strong aria-hidden="true" className={ui.requiredMark}>*</strong>
             </span>
-            <select
+            <input
+              id="packing-name-picker-search"
+              aria-controls="packing-options-listbox"
               aria-describedby={formErrors.packingId ? 'packing-id-error' : undefined}
               aria-invalid={Boolean(formErrors.packingId)}
+              autoComplete="off"
               className={formErrors.packingId ? ui.fieldControlInvalid : undefined}
-              name="packingId"
-              onChange={(event) => {
-                setPackingId(event.target.value);
-                const nextPacking = packings.find((item) => item.id === event.target.value);
-                setUnitOfMeasure(nextPacking?.unitOfMeasure ?? '');
-                setFormErrors((current) => {
-                  if (!current.packingId && !current.unitOfMeasure) {
-                    return current;
-                  }
-                  const next = { ...current };
-                  delete next.packingId;
-                  delete next.unitOfMeasure;
-                  return next;
-                });
-              }}
-              value={packingId}
-            >
-              <option value="">Selecione</option>
-              {filteredPackings.map((packing) => (
-                <option key={packing.id} value={packing.id}>
-                  {packing.name}
-                </option>
-              ))}
-            </select>
+              name="packingNameFilter"
+              onChange={(event) => setNameQuery(event.target.value)}
+              placeholder="Digite para filtrar e escolher na lista"
+              type="search"
+              value={nameQuery}
+            />
           </label>
-          {nameQuery.trim() && filteredPackings.length === 0 ? (
-            <p className={ui.feedbackMessage} role="status" style={{ margin: 0 }}>
-              Nenhuma embalagem encontrada com esse nome.
+          {packings.length === 0 ? (
+            <p className={pickerStyles.emptyState} role="status">
+              Nenhuma embalagem cadastrada.
             </p>
-          ) : null}
+          ) : (
+            <div
+              className={pickerStyles.optionList}
+              id="packing-options-listbox"
+              role="listbox"
+              aria-label="Embalagens disponíveis"
+            >
+              {filteredPackings.length === 0 ? (
+                <p className={pickerStyles.emptyState} role="status">
+                  Nenhuma embalagem encontrada com esse nome.
+                </p>
+              ) : (
+                filteredPackings.map((packing) => (
+                  <button
+                    key={packing.id}
+                    type="button"
+                    className={`${pickerStyles.optionButton} ${
+                      packing.id === packingId ? pickerStyles.optionSelected : ''
+                    }`}
+                    role="option"
+                    aria-selected={packing.id === packingId}
+                    onClick={() => {
+                      setPackingId(packing.id);
+                      setNameQuery('');
+                      setUnitOfMeasure(packing.unitOfMeasure);
+                      setFormErrors((current) => {
+                        if (!current.packingId && !current.unitOfMeasure) {
+                          return current;
+                        }
+                        const next = { ...current };
+                        delete next.packingId;
+                        delete next.unitOfMeasure;
+                        return next;
+                      });
+                    }}
+                  >
+                    {packing.name}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
           {formErrors.packingId ? (
             <p className={ui.fieldErrorMessage} id="packing-id-error">
               {formErrors.packingId}
@@ -253,6 +268,7 @@ export const PackingSelectionModal = ({
             setPackingId('');
             setQuantity('');
             setUnitOfMeasure('');
+            setNameQuery('');
           }}
           secondaryConfirmLabel={isEditing ? undefined : 'Salvar e Adicionar'}
           secondaryConfirmTooltip={

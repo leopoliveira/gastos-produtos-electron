@@ -49,6 +49,7 @@ describe('sqlite database infrastructure', () => {
     expect(migrations.map((migration: { Id: string }) => migration.Id)).toEqual([
       '20260103201139_InitialCreate',
       '20260106223207_AddGroupsFeature',
+      '20260325093000_AddRecipeDisplayUnits',
     ]);
 
     await closeDatabase();
@@ -58,6 +59,6 @@ describe('sqlite database infrastructure', () => {
       'SELECT COUNT(*) AS count FROM "__AppMigrations";',
     );
 
-    expect(reopenedMigrations[0]?.count).toBe(2);
+    expect(reopenedMigrations[0]?.count).toBe(3);
   });
 });
